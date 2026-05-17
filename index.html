@@ -26,502 +26,128 @@
       --radius: 10px;
     }
 
-    body {
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      height: 100vh;
-      display: flex;
-      overflow: hidden;
-    }
+    body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; overflow: hidden; }
 
-    #sidebar {
-      width: 260px;
-      min-width: 260px;
-      background: var(--sidebar-bg);
-      color: var(--sidebar-text);
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      overflow: hidden;
-    }
-
+    #sidebar { width: 260px; min-width: 260px; background: var(--sidebar-bg); color: var(--sidebar-text); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
     .sidebar-header { padding: 20px 16px 12px; border-bottom: 1px solid #313244; }
-
-    .app-title {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--accent);
-      letter-spacing: -0.3px;
-      margin-bottom: 12px;
-    }
-
+    .app-title { font-size: 18px; font-weight: 700; color: var(--accent); letter-spacing: -0.3px; margin-bottom: 12px; }
     .sidebar-search { position: relative; }
-
-    .sidebar-search input {
-      width: 100%;
-      background: #313244;
-      border: 1px solid #45475a;
-      border-radius: 8px;
-      color: var(--sidebar-text);
-      padding: 8px 10px 8px 32px;
-      font-size: 13px;
-      outline: none;
-      transition: border-color .2s;
-    }
-
+    .sidebar-search input { width: 100%; background: #313244; border: 1px solid #45475a; border-radius: 8px; color: var(--sidebar-text); padding: 8px 10px 8px 32px; font-size: 13px; outline: none; transition: border-color .2s; }
     .sidebar-search input::placeholder { color: var(--sidebar-muted); }
     .sidebar-search input:focus { border-color: var(--accent); }
-
-    .sidebar-search .search-icon {
-      position: absolute;
-      left: 9px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 13px;
-      pointer-events: none;
-    }
-
+    .sidebar-search .search-icon { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); font-size: 13px; pointer-events: none; }
     .sidebar-nav { padding: 12px 8px; border-bottom: 1px solid #313244; }
-
-    .nav-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 8px 10px;
-      border-radius: 7px;
-      cursor: pointer;
-      font-size: 13.5px;
-      color: var(--sidebar-muted);
-      transition: background .15s, color .15s;
-      user-select: none;
-    }
-
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 7px; cursor: pointer; font-size: 13.5px; color: var(--sidebar-muted); transition: background .15s, color .15s; user-select: none; }
     .nav-item:hover { background: var(--sidebar-hover); color: var(--sidebar-text); }
     .nav-item.active { background: var(--sidebar-active); color: var(--accent); }
-
-    .nav-item .count {
-      margin-left: auto;
-      background: #45475a;
-      color: var(--sidebar-muted);
-      font-size: 11px;
-      padding: 1px 6px;
-      border-radius: 10px;
-    }
-
+    .nav-item .count { margin-left: auto; background: #45475a; color: var(--sidebar-muted); font-size: 11px; padding: 1px 6px; border-radius: 10px; }
     .sidebar-categories { flex: 1; overflow-y: auto; padding: 8px; }
     .sidebar-categories::-webkit-scrollbar { width: 4px; }
     .sidebar-categories::-webkit-scrollbar-thumb { background: #45475a; border-radius: 2px; }
-
-    .section-label {
-      font-size: 10.5px;
-      font-weight: 600;
-      color: var(--sidebar-muted);
-      letter-spacing: 0.8px;
-      text-transform: uppercase;
-      padding: 8px 10px 4px;
-    }
-
-    .category-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 7px 10px;
-      border-radius: 7px;
-      cursor: pointer;
-      font-size: 13px;
-      color: var(--sidebar-muted);
-      transition: background .15s, color .15s;
-      user-select: none;
-      position: relative;
-    }
-
+    .section-label { font-size: 10.5px; font-weight: 600; color: var(--sidebar-muted); letter-spacing: 0.8px; text-transform: uppercase; padding: 8px 10px 4px; }
+    .category-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 7px; cursor: pointer; font-size: 13px; color: var(--sidebar-muted); transition: background .15s, color .15s; user-select: none; position: relative; }
     .category-item:hover { background: var(--sidebar-hover); color: var(--sidebar-text); }
     .category-item.active { background: var(--sidebar-active); color: var(--sidebar-text); }
-
     .cat-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-
     .category-item .count { margin-left: auto; font-size: 11px; color: var(--sidebar-muted); }
-
     .cat-actions { display: none; align-items: center; gap: 2px; margin-left: 4px; }
     .category-item:hover .cat-actions { display: flex; }
-
-    .cat-action-btn {
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 2px 4px;
-      border-radius: 4px;
-      font-size: 12px;
-      color: var(--sidebar-muted);
-      line-height: 1;
-      transition: background .12s, color .12s;
-    }
-
+    .cat-action-btn { background: none; border: none; cursor: pointer; padding: 2px 4px; border-radius: 4px; font-size: 12px; color: var(--sidebar-muted); line-height: 1; transition: background .12s, color .12s; }
     .cat-action-btn:hover { background: #45475a; color: var(--sidebar-text); }
     .cat-action-btn.del:hover { color: #f38ba8; }
-
-    .btn-new-cat {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      width: 100%;
-      padding: 7px 10px;
-      background: none;
-      border: none;
-      color: var(--sidebar-muted);
-      font-size: 12.5px;
-      cursor: pointer;
-      border-radius: 7px;
-      transition: background .15s, color .15s;
-    }
-
+    .btn-new-cat { display: flex; align-items: center; gap: 8px; width: 100%; padding: 7px 10px; background: none; border: none; color: var(--sidebar-muted); font-size: 12.5px; cursor: pointer; border-radius: 7px; transition: background .15s, color .15s; }
     .btn-new-cat:hover { background: var(--sidebar-hover); color: var(--sidebar-text); }
-
     .sidebar-footer { padding: 12px 8px; border-top: 1px solid #313244; display: flex; flex-direction: column; gap: 8px; }
-
-    .btn-drive {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 7px;
-      width: 100%;
-      padding: 9px 10px;
-      background: #313244;
-      border: 1px solid #45475a;
-      border-radius: 8px;
-      color: var(--sidebar-text);
-      font-size: 12.5px;
-      cursor: pointer;
-      transition: background .15s, border-color .15s;
-      font-family: inherit;
-    }
-
+    .btn-drive { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; padding: 9px 10px; background: #313244; border: 1px solid #45475a; border-radius: 8px; color: var(--sidebar-text); font-size: 12.5px; cursor: pointer; transition: background .15s; font-family: inherit; }
     .btn-drive:hover { background: #45475a; }
     .btn-drive.connected { border-color: #a6e3a1; color: #a6e3a1; }
+    .drive-status { font-size: 10.5px; color: var(--sidebar-muted); text-align: center; }
 
-    .drive-status {
-      font-size: 10.5px;
-      color: var(--sidebar-muted);
-      text-align: center;
-    }
-
-    #list-panel {
-      width: 300px;
-      min-width: 300px;
-      background: #fafaf7;
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-
-    .list-header {
-      padding: 16px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
+    #list-panel { width: 300px; min-width: 300px; background: #fafaf7; border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100vh; }
+    .list-header { padding: 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
     .list-title { font-size: 14px; font-weight: 600; color: var(--text); }
     .list-actions { display: flex; gap: 6px; }
-
-    .icon-btn {
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 5px 7px;
-      border-radius: 6px;
-      color: var(--muted);
-      font-size: 15px;
-      transition: background .15s, color .15s;
-    }
-
+    .icon-btn { background: none; border: none; cursor: pointer; padding: 5px 7px; border-radius: 6px; color: var(--muted); font-size: 15px; transition: background .15s, color .15s; }
     .icon-btn:hover { background: var(--border); color: var(--text); }
-
-    .list-sort {
-      padding: 8px 16px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      gap: 6px;
-    }
-
-    .sort-btn {
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 3px 8px;
-      border-radius: 5px;
-      font-size: 11.5px;
-      color: var(--muted);
-      transition: background .15s, color .15s;
-    }
-
+    .list-sort { padding: 8px 16px; border-bottom: 1px solid var(--border); display: flex; gap: 6px; }
+    .sort-btn { background: none; border: none; cursor: pointer; padding: 3px 8px; border-radius: 5px; font-size: 11.5px; color: var(--muted); transition: background .15s, color .15s; }
     .sort-btn.active { background: var(--accent); color: #fff; }
-
     #note-list { flex: 1; overflow-y: auto; padding: 8px; }
     #note-list::-webkit-scrollbar { width: 4px; }
     #note-list::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
 
-    .note-card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 12px 14px;
-      cursor: pointer;
-      margin-bottom: 6px;
-      transition: box-shadow .15s, border-color .15s;
-      position: relative;
-    }
-
+    .note-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; cursor: pointer; margin-bottom: 6px; transition: box-shadow .15s, border-color .15s; position: relative; }
     .note-card:hover { box-shadow: var(--shadow); border-color: #d0d0c8; }
     .note-card.active { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(137,180,250,0.2); }
-
-    .note-card-title {
-      font-size: 13.5px;
-      font-weight: 600;
-      color: var(--text);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      margin-bottom: 5px;
-    }
-
-    .note-card-preview {
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.5;
-      overflow: hidden;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      margin-bottom: 8px;
-    }
-
+    .note-card.locked-card { border-left: 3px solid #f9e2af; }
+    .note-card.hidden-card { opacity: 0.7; border-left: 3px solid #cba6f7; }
+    .note-card-title { font-size: 13.5px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px; }
+    .note-card-preview { font-size: 12px; color: var(--muted); line-height: 1.5; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin-bottom: 8px; }
     .note-card-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .note-date { font-size: 11px; color: var(--muted); }
-
     .tag-chip { font-size: 10.5px; padding: 1px 7px; border-radius: 10px; font-weight: 500; }
-
-    .note-card-del {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: var(--muted);
-      font-size: 14px;
-      opacity: 0;
-      transition: opacity .15s, color .15s;
-      padding: 2px 4px;
-      border-radius: 4px;
-    }
-
+    .note-card-del { position: absolute; top: 8px; right: 8px; background: none; border: none; cursor: pointer; color: var(--muted); font-size: 14px; opacity: 0; transition: opacity .15s, color .15s; padding: 2px 4px; border-radius: 4px; }
     .note-card:hover .note-card-del { opacity: 1; }
     .note-card-del:hover { color: var(--danger); }
-
     .empty-state { text-align: center; color: var(--muted); padding: 40px 20px; font-size: 13px; line-height: 1.8; }
 
-    #editor-panel {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      background: var(--editor-bg);
-      height: 100vh;
-      overflow: hidden;
-    }
-
-    .editor-toolbar {
-      padding: 12px 20px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    #note-title {
-      flex: 1;
-      font-size: 18px;
-      font-weight: 700;
-      border: none;
-      outline: none;
-      background: transparent;
-      color: var(--text);
-      min-width: 120px;
-    }
-
+    #editor-panel { flex: 1; display: flex; flex-direction: column; background: var(--editor-bg); height: 100vh; overflow: hidden; }
+    .editor-toolbar { padding: 12px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    #note-title { flex: 1; font-size: 18px; font-weight: 700; border: none; outline: none; background: transparent; color: var(--text); min-width: 120px; }
     #note-title::placeholder { color: #ccc; }
-
     .editor-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-
-    .cat-select {
-      background: #f0f0eb;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 4px 8px;
-      font-size: 12px;
-      color: var(--text);
-      cursor: pointer;
-      outline: none;
-    }
-
-    .tag-input-wrap {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      background: #f0f0eb;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 3px 8px;
-      flex-wrap: wrap;
-      max-width: 300px;
-    }
-
-    .tag-input-wrap input {
-      border: none;
-      outline: none;
-      background: transparent;
-      font-size: 12px;
-      width: 80px;
-      color: var(--text);
-    }
-
+    .cat-select { background: #f0f0eb; border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; font-size: 12px; color: var(--text); cursor: pointer; outline: none; }
+    .tag-input-wrap { display: flex; align-items: center; gap: 4px; background: #f0f0eb; border: 1px solid var(--border); border-radius: 6px; padding: 3px 8px; flex-wrap: wrap; max-width: 300px; }
+    .tag-input-wrap input { border: none; outline: none; background: transparent; font-size: 12px; width: 80px; color: var(--text); }
     .tag-input-wrap input::placeholder { color: #bbb; }
-
     .editor-date { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
-
-    .btn-save {
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 7px;
-      padding: 6px 16px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: opacity .15s;
-    }
-
+    .btn-save { background: var(--accent); color: #fff; border: none; border-radius: 7px; padding: 6px 16px; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity .15s; }
     .btn-save:hover { opacity: 0.88; }
-
-    #note-body {
-      flex: 1;
-      padding: 24px 28px;
-      font-size: 14.5px;
-      line-height: 1.75;
-      border: none;
-      outline: none;
-      resize: none;
-      color: var(--text);
-      background: var(--editor-bg);
-      font-family: inherit;
-    }
-
+    .btn-icon-tool { background: #f0f0eb; border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; font-size: 14px; cursor: pointer; transition: background .15s; line-height: 1; }
+    .btn-icon-tool:hover { background: var(--border); }
+    .btn-icon-tool.active-lock { background: #fef3cd; border-color: #f9e2af; }
+    .btn-icon-tool.active-hide { background: #f0e6ff; border-color: #cba6f7; }
+    #note-body { flex: 1; padding: 24px 28px; font-size: 14.5px; line-height: 1.75; border: none; outline: none; resize: none; color: var(--text); background: var(--editor-bg); font-family: inherit; }
     #note-body::placeholder { color: #ccc; }
-
-    .no-note {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: var(--muted);
-      gap: 12px;
-    }
-
+    .no-note { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--muted); gap: 12px; }
     .no-note-icon { font-size: 48px; }
     .no-note p { font-size: 14px; }
 
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.4);
-      z-index: 100;
-      align-items: center;
-      justify-content: center;
+    /* locked overlay */
+    #locked-overlay { flex: 1; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: var(--editor-bg); }
+    #locked-overlay .lock-icon { font-size: 52px; }
+    #locked-overlay p { font-size: 14px; color: var(--muted); }
+    #locked-overlay input { border: 1px solid var(--border); border-radius: 8px; padding: 9px 14px; font-size: 14px; outline: none; width: 220px; text-align: center; letter-spacing: 2px; }
+    #locked-overlay input:focus { border-color: var(--accent); }
+    #locked-overlay input.shake { animation: shake .3s; }
+    #locked-overlay .btn-unlock { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 9px 28px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    #locked-overlay .err { color: var(--danger); font-size: 12.5px; }
+
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%,60% { transform: translateX(-6px); }
+      40%,80% { transform: translateX(6px); }
     }
 
+    /* modals */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
     .modal-overlay.open { display: flex; }
-
-    .modal {
-      background: #fff;
-      border-radius: 12px;
-      padding: 24px;
-      width: 340px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-    }
-
-    .modal h3 { font-size: 16px; margin-bottom: 16px; }
-
-    .modal input {
-      width: 100%;
-      border: 1px solid var(--border);
-      border-radius: 7px;
-      padding: 8px 12px;
-      font-size: 14px;
-      margin-bottom: 10px;
-      outline: none;
-    }
-
+    .modal { background: #fff; border-radius: 12px; padding: 24px; width: 340px; box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
+    .modal h3 { font-size: 16px; margin-bottom: 6px; }
+    .modal p.modal-sub { font-size: 12.5px; color: var(--muted); margin-bottom: 14px; }
+    .modal input { width: 100%; border: 1px solid var(--border); border-radius: 7px; padding: 8px 12px; font-size: 14px; margin-bottom: 10px; outline: none; }
     .modal input:focus { border-color: var(--accent); }
-
+    .modal .modal-err { color: var(--danger); font-size: 12px; margin-bottom: 8px; min-height: 16px; }
     .color-options { display: flex; gap: 8px; margin-bottom: 16px; }
-
-    .color-opt {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      border: 2px solid transparent;
-      cursor: pointer;
-      transition: border-color .15s, transform .15s;
-    }
-
+    .color-opt { width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: border-color .15s, transform .15s; }
     .color-opt.selected, .color-opt:hover { border-color: #333; transform: scale(1.15); }
-
     .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
-
-    .btn-cancel {
-      background: #f0f0eb;
-      border: none;
-      border-radius: 7px;
-      padding: 7px 16px;
-      font-size: 13px;
-      cursor: pointer;
-    }
-
-    .btn-confirm {
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 7px;
-      padding: 7px 16px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-    }
+    .btn-cancel { background: #f0f0eb; border: none; border-radius: 7px; padding: 7px 16px; font-size: 13px; cursor: pointer; }
+    .btn-danger-sm { background: #fde8ec; color: var(--danger); border: none; border-radius: 7px; padding: 7px 14px; font-size: 13px; cursor: pointer; margin-right: auto; }
+    .btn-confirm { background: var(--accent); color: #fff; border: none; border-radius: 7px; padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer; }
 
     mark { background: #fef08a; border-radius: 2px; }
-
-    .toast {
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%) translateY(10px);
-      background: #313244;
-      color: #cdd6f4;
-      padding: 9px 18px;
-      border-radius: 8px;
-      font-size: 13px;
-      opacity: 0;
-      transition: opacity .2s, transform .2s;
-      pointer-events: none;
-      z-index: 200;
-    }
-
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(10px); background: #313244; color: #cdd6f4; padding: 9px 18px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none; z-index: 200; }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   </style>
 </head>
@@ -535,25 +161,17 @@
       <input type="text" id="search-input" placeholder="메모 검색..." autocomplete="off" />
     </div>
   </div>
-
   <nav class="sidebar-nav">
-    <div class="nav-item active" data-filter="all">
-      <span>📄</span> 전체 메모 <span class="count" id="cnt-all">0</span>
-    </div>
-    <div class="nav-item" data-filter="recent">
-      <span>🕐</span> 최근 7일 <span class="count" id="cnt-recent">0</span>
-    </div>
-    <div class="nav-item" data-filter="starred">
-      <span>⭐</span> 즐겨찾기 <span class="count" id="cnt-starred">0</span>
-    </div>
+    <div class="nav-item active" data-filter="all"><span>📄</span> 전체 메모 <span class="count" id="cnt-all">0</span></div>
+    <div class="nav-item" data-filter="recent"><span>🕐</span> 최근 7일 <span class="count" id="cnt-recent">0</span></div>
+    <div class="nav-item" data-filter="starred"><span>⭐</span> 즐겨찾기 <span class="count" id="cnt-starred">0</span></div>
+    <div class="nav-item" data-filter="hidden" id="nav-hidden"><span>🙈</span> 숨긴 메모 <span class="count" id="cnt-hidden">0</span></div>
   </nav>
-
   <div class="sidebar-categories">
     <div class="section-label">카테고리</div>
     <div id="cat-list"></div>
     <button class="btn-new-cat" id="btn-add-cat">＋ 카테고리 추가</button>
   </div>
-
   <div class="sidebar-footer">
     <button class="btn-drive" id="btn-drive">
       <span id="drive-icon">☁️</span>
@@ -566,9 +184,7 @@
 <div id="list-panel">
   <div class="list-header">
     <span class="list-title" id="panel-title">전체 메모</span>
-    <div class="list-actions">
-      <button class="icon-btn" id="btn-new-note" title="새 메모">✏️</button>
-    </div>
+    <div class="list-actions"><button class="icon-btn" id="btn-new-note" title="새 메모">✏️</button></div>
   </div>
   <div class="list-sort">
     <button class="sort-btn active" data-sort="updated">최근 수정</button>
@@ -585,6 +201,14 @@
     <button class="btn-save" id="btn-start">새 메모 작성</button>
   </div>
 
+  <div id="locked-overlay">
+    <div class="lock-icon">🔒</div>
+    <p>비밀번호로 잠긴 메모입니다</p>
+    <input type="password" id="unlock-input" placeholder="비밀번호 입력" />
+    <div class="err" id="unlock-err"></div>
+    <button class="btn-unlock" id="btn-unlock">열기</button>
+  </div>
+
   <div id="editor-area" style="display:none; flex:1; flex-direction:column; overflow:hidden;">
     <div class="editor-toolbar">
       <input type="text" id="note-title" placeholder="제목 없음" />
@@ -593,6 +217,8 @@
         <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;">
           <input type="checkbox" id="note-starred" style="accent-color:var(--accent);"> ⭐
         </label>
+        <button class="btn-icon-tool" id="btn-lock-note" title="비밀번호 잠금">🔓</button>
+        <button class="btn-icon-tool" id="btn-hide-note" title="메모 숨기기">👁</button>
         <div class="tag-input-wrap">
           <span style="font-size:11px;color:var(--muted);">🏷</span>
           <div id="tag-chips" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
@@ -606,6 +232,7 @@
   </div>
 </div>
 
+<!-- 카테고리 모달 -->
 <div class="modal-overlay" id="cat-modal">
   <div class="modal">
     <h3 id="cat-modal-title">카테고리 추가</h3>
@@ -618,11 +245,42 @@
   </div>
 </div>
 
+<!-- 비밀번호 설정 모달 -->
+<div class="modal-overlay" id="set-pwd-modal">
+  <div class="modal">
+    <h3 id="set-pwd-title">비밀번호 설정</h3>
+    <p class="modal-sub" id="set-pwd-sub">이 메모에 비밀번호를 설정합니다</p>
+    <input type="password" id="set-pwd-input" placeholder="새 비밀번호" />
+    <input type="password" id="set-pwd-confirm" placeholder="비밀번호 확인" />
+    <div class="modal-err" id="set-pwd-err"></div>
+    <div class="modal-actions">
+      <button class="btn-danger-sm" id="set-pwd-remove" style="display:none">잠금 해제</button>
+      <button class="btn-cancel" id="set-pwd-cancel">취소</button>
+      <button class="btn-confirm" id="set-pwd-confirm-btn">설정</button>
+    </div>
+  </div>
+</div>
+
+<!-- 숨긴 메모 비밀번호 모달 -->
+<div class="modal-overlay" id="hidden-pwd-modal">
+  <div class="modal">
+    <h3 id="hidden-pwd-title">숨긴 메모</h3>
+    <p class="modal-sub" id="hidden-pwd-sub">마스터 비밀번호를 입력하세요</p>
+    <input type="password" id="hidden-pwd-input" placeholder="마스터 비밀번호" />
+    <input type="password" id="hidden-pwd-confirm" placeholder="비밀번호 확인" style="display:none" />
+    <div class="modal-err" id="hidden-pwd-err"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="hidden-pwd-cancel">취소</button>
+      <button class="btn-confirm" id="hidden-pwd-confirm-btn">확인</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://accounts.google.com/gsi/client" async></script>
 <script>
-  // ── Google Drive 설정 ──
+  // ── Google Drive ──
   const CLIENT_ID = '241891084572-gjtpciga7htfd3boa894uube0o1kp4mo.apps.googleusercontent.com';
   const SCOPE = 'https://www.googleapis.com/auth/drive.file';
   let accessToken = null;
@@ -634,12 +292,16 @@
   const CAT_COLORS = ['#89b4fa','#cba6f7','#f38ba8','#a6e3a1','#f9e2af','#94e2d5','#fab387','#eba0ac'];
   let notes = JSON.parse(localStorage.getItem('notes') || '[]');
   let categories = JSON.parse(localStorage.getItem('categories') || '[]');
+  let masterHash = localStorage.getItem('masterHash') || null;
   let currentNote = null;
   let currentFilter = 'all';
   let currentCat = null;
   let sortMode = 'updated';
   let searchQuery = '';
   let selectedColor = CAT_COLORS[0];
+  let editingCatId = null;
+  let hiddenVisible = false;
+  const unlockedSet = new Set();
 
   if (!categories.length) {
     categories = [
@@ -650,160 +312,11 @@
     saveLocal();
   }
 
-  function uid() {
-    return Date.now().toString(36) + Math.random().toString(36).slice(2);
-  }
-
-  function showToast(msg, duration = 2200) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), duration);
-  }
-
-  // ── 저장 ──
-  function saveLocal() {
-    localStorage.setItem('notes', JSON.stringify(notes));
-    localStorage.setItem('categories', JSON.stringify(categories));
-  }
-
-  async function save() {
-    saveLocal();
-    if (driveConnected && accessToken) {
-      await saveToDrive();
-    }
-  }
-
-  // ── Google Drive 함수 ──
-  window.onload = () => {
-    const savedToken = localStorage.getItem('gToken');
-    if (savedToken) {
-      accessToken = savedToken;
-      loadFromDrive().catch(() => {
-        accessToken = null;
-        localStorage.removeItem('gToken');
-        updateDriveUI(false);
-      });
-    }
-  };
-
-  function initTokenClient() {
-    if (tokenClient) return;
-    tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: CLIENT_ID,
-      scope: SCOPE,
-      callback: async (resp) => {
-        if (resp.error) { showToast('로그인 실패: ' + resp.error); return; }
-        accessToken = resp.access_token;
-        localStorage.setItem('gToken', accessToken);
-        await loadFromDrive();
-      },
-    });
-  }
-
-  document.getElementById('btn-drive').addEventListener('click', () => {
-    if (driveConnected) {
-      if (confirm('구글 드라이브 연결을 해제할까요?')) {
-        disconnectDrive();
-      }
-    } else {
-      initTokenClient();
-      tokenClient.requestAccessToken({ prompt: '' });
-    }
-  });
-
-  function disconnectDrive() {
-    if (accessToken) google.accounts.oauth2.revoke(accessToken, () => {});
-    accessToken = null;
-    driveConnected = false;
-    localStorage.removeItem('gToken');
-    updateDriveUI(false);
-    showToast('구글 드라이브 연결이 해제되었습니다');
-  }
-
-  function updateDriveUI(connected) {
-    driveConnected = connected;
-    const btn = document.getElementById('btn-drive');
-    const icon = document.getElementById('drive-icon');
-    const label = document.getElementById('drive-label');
-    const status = document.getElementById('drive-status');
-    if (connected) {
-      btn.classList.add('connected');
-      icon.textContent = '✅';
-      label.textContent = '드라이브 연결됨';
-      status.textContent = '저장 시 자동으로 드라이브에 동기화';
-    } else {
-      btn.classList.remove('connected');
-      icon.textContent = '☁️';
-      label.textContent = '구글 드라이브 연결';
-      status.textContent = '연결하면 자동 저장·동기화';
-    }
-  }
-
-  async function findOrCreateFile() {
-    if (driveFileId) return;
-    const resp = await fetch(
-      `https://www.googleapis.com/drive/v3/files?q=name%3D'memo-notes.json'+and+trashed%3Dfalse&fields=files(id)`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
-    if (!resp.ok) throw new Error('Drive 접근 실패');
-    const data = await resp.json();
-    if (data.files && data.files.length > 0) {
-      driveFileId = data.files[0].id;
-    } else {
-      const form = new FormData();
-      form.append('metadata', new Blob([JSON.stringify({ name: 'memo-notes.json', mimeType: 'application/json' })], { type: 'application/json' }));
-      form.append('file', new Blob([JSON.stringify({ notes: [], categories: [] })], { type: 'application/json' }));
-      const cr = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
-        { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, body: form });
-      if (!cr.ok) throw new Error('파일 생성 실패');
-      const cd = await cr.json();
-      driveFileId = cd.id;
-    }
-    localStorage.setItem('driveFileId', driveFileId);
-  }
-
-  async function loadFromDrive() {
-    await findOrCreateFile();
-    const resp = await fetch(
-      `https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
-    if (!resp.ok) throw new Error('불러오기 실패');
-    const data = await resp.json();
-    if (Array.isArray(data.notes)) notes = data.notes;
-    if (Array.isArray(data.categories) && data.categories.length) categories = data.categories;
-    saveLocal();
-    updateDriveUI(true);
-    renderAll();
-    showToast('☁️ 드라이브에서 불러왔습니다');
-  }
-
-  async function saveToDrive() {
-    if (!driveFileId || !accessToken) return;
-    const resp = await fetch(
-      `https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,
-      {
-        method: 'PATCH',
-        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes, categories }),
-      }
-    );
-    if (resp.status === 401) {
-      accessToken = null;
-      localStorage.removeItem('gToken');
-      updateDriveUI(false);
-      showToast('세션이 만료되었습니다. 다시 연결해주세요.');
-    }
-  }
-
   // ── 유틸 ──
-  function escHtml(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 
+  function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function escRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
-
   function highlight(text, q) {
     if (!q) return escHtml(text);
     return escHtml(text).replace(new RegExp('(' + escRe(q) + ')', 'gi'), '<mark>$1</mark>');
@@ -818,12 +331,125 @@
     return d.toLocaleDateString('ko', { month: 'short', day: 'numeric' });
   }
 
-  // ── 카테고리 렌더 ──
+  function showToast(msg, duration = 2200) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), duration);
+  }
+
+  // ── 해시 ──
+  async function hashStr(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
+  async function verifyHash(str, hash) {
+    return await hashStr(str) === hash;
+  }
+
+  // ── 저장 ──
+  function saveLocal() {
+    localStorage.setItem('notes', JSON.stringify(notes));
+    localStorage.setItem('categories', JSON.stringify(categories));
+    if (masterHash) localStorage.setItem('masterHash', masterHash);
+  }
+
+  async function save() {
+    saveLocal();
+    if (driveConnected && accessToken) await saveToDrive();
+  }
+
+  // ── Google Drive ──
+  window.onload = () => {
+    const saved = localStorage.getItem('gToken');
+    if (saved) { accessToken = saved; loadFromDrive().catch(() => { accessToken = null; localStorage.removeItem('gToken'); updateDriveUI(false); }); }
+  };
+
+  function initTokenClient() {
+    if (tokenClient) return;
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID, scope: SCOPE,
+      callback: async (resp) => {
+        if (resp.error) { showToast('로그인 실패: ' + resp.error); return; }
+        accessToken = resp.access_token;
+        localStorage.setItem('gToken', accessToken);
+        await loadFromDrive();
+      },
+    });
+  }
+
+  document.getElementById('btn-drive').addEventListener('click', () => {
+    if (driveConnected) {
+      if (confirm('구글 드라이브 연결을 해제할까요?')) {
+        if (accessToken) google.accounts.oauth2.revoke(accessToken, () => {});
+        accessToken = null; driveConnected = false;
+        localStorage.removeItem('gToken');
+        updateDriveUI(false);
+        showToast('드라이브 연결이 해제되었습니다');
+      }
+    } else {
+      initTokenClient();
+      tokenClient.requestAccessToken({ prompt: '' });
+    }
+  });
+
+  function updateDriveUI(connected) {
+    driveConnected = connected;
+    const btn = document.getElementById('btn-drive');
+    btn.classList.toggle('connected', connected);
+    document.getElementById('drive-icon').textContent = connected ? '✅' : '☁️';
+    document.getElementById('drive-label').textContent = connected ? '드라이브 연결됨' : '구글 드라이브 연결';
+    document.getElementById('drive-status').textContent = connected ? '저장 시 자동으로 드라이브에 동기화' : '연결하면 자동 저장·동기화';
+  }
+
+  async function findOrCreateFile() {
+    if (driveFileId) return;
+    const resp = await fetch(`https://www.googleapis.com/drive/v3/files?q=name%3D'memo-notes.json'+and+trashed%3Dfalse&fields=files(id)`, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if (!resp.ok) throw new Error('Drive 접근 실패');
+    const data = await resp.json();
+    if (data.files?.length) { driveFileId = data.files[0].id; }
+    else {
+      const form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify({ name: 'memo-notes.json', mimeType: 'application/json' })], { type: 'application/json' }));
+      form.append('file', new Blob([JSON.stringify({ notes: [], categories: [], masterHash: null })], { type: 'application/json' }));
+      const cr = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, body: form });
+      const cd = await cr.json();
+      driveFileId = cd.id;
+    }
+    localStorage.setItem('driveFileId', driveFileId);
+  }
+
+  async function loadFromDrive() {
+    await findOrCreateFile();
+    const resp = await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if (!resp.ok) throw new Error('불러오기 실패');
+    const data = await resp.json();
+    if (Array.isArray(data.notes)) notes = data.notes;
+    if (Array.isArray(data.categories) && data.categories.length) categories = data.categories;
+    if (data.masterHash) { masterHash = data.masterHash; localStorage.setItem('masterHash', masterHash); }
+    saveLocal();
+    updateDriveUI(true);
+    renderAll();
+    showToast('☁️ 드라이브에서 불러왔습니다');
+  }
+
+  async function saveToDrive() {
+    if (!driveFileId || !accessToken) return;
+    const resp = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ notes, categories, masterHash }),
+    });
+    if (resp.status === 401) { accessToken = null; localStorage.removeItem('gToken'); updateDriveUI(false); showToast('세션 만료. 다시 연결해주세요.'); }
+  }
+
+  // ── 렌더링 ──
   function renderCategories() {
     const el = document.getElementById('cat-list');
     el.innerHTML = '';
     categories.forEach(cat => {
-      const cnt = notes.filter(n => n.cat === cat.id).length;
+      const cnt = notes.filter(n => n.cat === cat.id && !n.hidden).length;
       const div = document.createElement('div');
       div.className = 'category-item' + (currentFilter === 'cat' && currentCat === cat.id ? ' active' : '');
       div.innerHTML = `
@@ -846,10 +472,15 @@
     });
   }
 
-  // ── 메모 목록 렌더 ──
   function getFilteredNotes() {
     let list = [...notes];
     const q = searchQuery.trim().toLowerCase();
+    // 숨긴 메모 필터
+    if (currentFilter === 'hidden') {
+      list = list.filter(n => n.hidden);
+    } else {
+      list = list.filter(n => !n.hidden);
+    }
     if (q) list = list.filter(n => n.title.toLowerCase().includes(q) || n.body.toLowerCase().includes(q) || (n.tags||[]).some(t => t.toLowerCase().includes(q)));
     if (currentFilter === 'recent') list = list.filter(n => n.updated > Date.now() - 7*86400000);
     else if (currentFilter === 'starred') list = list.filter(n => n.starred);
@@ -866,23 +497,27 @@
     const q = searchQuery.trim().toLowerCase();
     document.getElementById('panel-title').textContent =
       currentFilter === 'all' ? '전체 메모' : currentFilter === 'recent' ? '최근 7일' :
-      currentFilter === 'starred' ? '즐겨찾기' : (categories.find(c => c.id === currentCat)?.name || '카테고리');
+      currentFilter === 'starred' ? '즐겨찾기' : currentFilter === 'hidden' ? '숨긴 메모' :
+      (categories.find(c => c.id === currentCat)?.name || '카테고리');
     if (!list.length) {
-      el.innerHTML = `<div class="empty-state">${q ? '검색 결과가 없습니다.<br>다른 키워드로 검색해보세요.' : '메모가 없습니다.<br>새 메모를 작성해보세요.'}</div>`;
+      el.innerHTML = `<div class="empty-state">${q ? '검색 결과가 없습니다.' : '메모가 없습니다.<br>새 메모를 작성해보세요.'}</div>`;
       return;
     }
     el.innerHTML = '';
     list.forEach(note => {
       const cat = categories.find(c => c.id === note.cat);
+      const isLocked = note.locked && !unlockedSet.has(note.id);
       const div = document.createElement('div');
-      div.className = 'note-card' + (currentNote?.id === note.id ? ' active' : '');
+      div.className = 'note-card' + (currentNote?.id === note.id ? ' active' : '') + (note.locked ? ' locked-card' : '') + (note.hidden ? ' hidden-card' : '');
+      const preview = isLocked ? '🔒 비밀번호로 잠겨있습니다' : note.body;
       div.innerHTML = `
-        <div class="note-card-title">${highlight(note.title || '제목 없음', q)}</div>
-        <div class="note-card-preview">${highlight(note.body, q).replace(/\n/g,' ')}</div>
+        <div class="note-card-title">${note.locked ? '🔒 ' : ''}${highlight(note.title || '제목 없음', q)}</div>
+        <div class="note-card-preview">${isLocked ? preview : highlight(preview, q).replace(/\n/g,' ')}</div>
         <div class="note-card-meta">
           ${cat ? `<span class="tag-chip" style="background:${cat.color}22;color:${cat.color}">${escHtml(cat.name)}</span>` : ''}
-          ${(note.tags||[]).map(t=>`<span class="tag-chip" style="background:${cat?.color||'#eee'}22;color:${cat?.color||'#888'}">#${escHtml(t)}</span>`).join('')}
+          ${(!isLocked ? (note.tags||[]) : []).map(t=>`<span class="tag-chip" style="background:${cat?.color||'#eee'}22;color:${cat?.color||'#888'}">#${escHtml(t)}</span>`).join('')}
           ${note.starred ? '<span style="font-size:11px;">⭐</span>' : ''}
+          ${note.hidden ? '<span style="font-size:11px;">🙈</span>' : ''}
           <span class="note-date" style="margin-left:auto">${fmtDate(note.updated)}</span>
         </div>
         <button class="note-card-del" title="삭제">🗑</button>`;
@@ -891,7 +526,7 @@
         e.stopPropagation();
         if (confirm('이 메모를 삭제할까요?')) {
           notes = notes.filter(n => n.id !== note.id);
-          if (currentNote?.id === note.id) { currentNote = null; showEditor(false); }
+          if (currentNote?.id === note.id) { currentNote = null; showEditorState('none'); }
           save(); renderAll();
         }
       });
@@ -900,18 +535,23 @@
   }
 
   function updateCounts() {
-    document.getElementById('cnt-all').textContent = notes.length;
-    document.getElementById('cnt-recent').textContent = notes.filter(n => n.updated > Date.now() - 7*86400000).length;
-    document.getElementById('cnt-starred').textContent = notes.filter(n => n.starred).length;
+    document.getElementById('cnt-all').textContent = notes.filter(n => !n.hidden).length;
+    document.getElementById('cnt-recent').textContent = notes.filter(n => !n.hidden && n.updated > Date.now() - 7*86400000).length;
+    document.getElementById('cnt-starred').textContent = notes.filter(n => !n.hidden && n.starred).length;
+    document.getElementById('cnt-hidden').textContent = notes.filter(n => n.hidden).length;
   }
 
   function renderAll() { renderCategories(); renderNoteList(); updateCounts(); updateCatSelect(); }
 
-  // ── 에디터 ──
-  function showEditor(show) {
-    document.getElementById('no-note').style.display = show ? 'none' : 'flex';
+  // ── 에디터 상태 ──
+  // state: 'none' | 'locked' | 'editor'
+  function showEditorState(state) {
+    document.getElementById('no-note').style.display = state === 'none' ? 'flex' : 'none';
+    const lo = document.getElementById('locked-overlay');
+    lo.style.display = state === 'locked' ? 'flex' : 'none';
+    lo.style.flexDirection = 'column';
     const ea = document.getElementById('editor-area');
-    ea.style.display = show ? 'flex' : 'none';
+    ea.style.display = state === 'editor' ? 'flex' : 'none';
     ea.style.flexDirection = 'column'; ea.style.flex = '1'; ea.style.overflow = 'hidden';
   }
 
@@ -923,19 +563,63 @@
     if (val) sel.value = val;
   }
 
-  function openNote(id) {
-    currentNote = notes.find(n => n.id === id) || null;
+  function updateLockHideButtons() {
     if (!currentNote) return;
-    showEditor(true);
-    document.getElementById('note-title').value = currentNote.title;
-    document.getElementById('note-body').value = currentNote.body;
-    document.getElementById('note-cat').value = currentNote.cat || '';
-    document.getElementById('note-starred').checked = !!currentNote.starred;
-    document.getElementById('note-date').textContent = '수정: ' + fmtDate(currentNote.updated);
-    renderTags(currentNote.tags || []);
-    updateCatSelect();
-    renderNoteList();
+    const lockBtn = document.getElementById('btn-lock-note');
+    const hideBtn = document.getElementById('btn-hide-note');
+    lockBtn.textContent = currentNote.locked ? '🔒' : '🔓';
+    lockBtn.title = currentNote.locked ? '비밀번호 변경/해제' : '비밀번호 잠금';
+    lockBtn.classList.toggle('active-lock', !!currentNote.locked);
+    hideBtn.textContent = currentNote.hidden ? '🙈' : '👁';
+    hideBtn.title = currentNote.hidden ? '숨김 해제' : '메모 숨기기';
+    hideBtn.classList.toggle('active-hide', !!currentNote.hidden);
   }
+
+  async function openNote(id) {
+    const note = notes.find(n => n.id === id);
+    if (!note) return;
+    currentNote = note;
+    renderNoteList();
+
+    if (note.locked && !unlockedSet.has(note.id)) {
+      showEditorState('locked');
+      document.getElementById('unlock-input').value = '';
+      document.getElementById('unlock-err').textContent = '';
+      document.getElementById('unlock-input').focus();
+      return;
+    }
+    showEditorState('editor');
+    document.getElementById('note-title').value = note.title;
+    document.getElementById('note-body').value = note.body;
+    document.getElementById('note-cat').value = note.cat || '';
+    document.getElementById('note-starred').checked = !!note.starred;
+    document.getElementById('note-date').textContent = '수정: ' + fmtDate(note.updated);
+    renderTags(note.tags || []);
+    updateCatSelect();
+    updateLockHideButtons();
+  }
+
+  // 잠금 해제 버튼
+  document.getElementById('btn-unlock').addEventListener('click', async () => {
+    const pw = document.getElementById('unlock-input').value;
+    if (!pw) return;
+    const ok = await verifyHash(pw, currentNote.lockHash);
+    if (ok) {
+      unlockedSet.add(currentNote.id);
+      document.getElementById('unlock-err').textContent = '';
+      openNote(currentNote.id);
+    } else {
+      const inp = document.getElementById('unlock-input');
+      document.getElementById('unlock-err').textContent = '비밀번호가 틀렸습니다';
+      inp.classList.add('shake');
+      setTimeout(() => inp.classList.remove('shake'), 400);
+      inp.value = '';
+    }
+  });
+
+  document.getElementById('unlock-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('btn-unlock').click();
+  });
 
   function renderTags(tags) {
     const chips = document.getElementById('tag-chips');
@@ -965,20 +649,168 @@
   }
 
   function newNote() {
-    const note = { id: uid(), title: '', body: '', cat: currentFilter === 'cat' ? currentCat : (categories[0]?.id || ''), tags: [], starred: false, created: Date.now(), updated: Date.now() };
+    const note = { id: uid(), title: '', body: '', cat: currentFilter === 'cat' ? currentCat : (categories[0]?.id || ''), tags: [], starred: false, locked: false, lockHash: null, hidden: false, created: Date.now(), updated: Date.now() };
     currentNote = note; notes.unshift(note); saveLocal();
-    showEditor(true);
+    showEditorState('editor');
     document.getElementById('note-title').value = '';
     document.getElementById('note-body').value = '';
     document.getElementById('note-starred').checked = false;
     document.getElementById('note-date').textContent = '방금 생성';
     renderTags([]); updateCatSelect();
     document.getElementById('note-cat').value = note.cat;
+    updateLockHideButtons();
     renderAll();
     document.getElementById('note-title').focus();
   }
 
-  // ── 태그 입력 ──
+  // ── 비밀번호 잠금 ──
+  document.getElementById('btn-lock-note').addEventListener('click', () => {
+    if (!currentNote) return;
+    openSetPwdModal(currentNote);
+  });
+
+  function openSetPwdModal(note) {
+    document.getElementById('set-pwd-title').textContent = note.locked ? '비밀번호 변경/해제' : '비밀번호 설정';
+    document.getElementById('set-pwd-sub').textContent = note.locked ? '새 비밀번호를 설정하거나 잠금을 해제하세요' : '이 메모에 비밀번호를 설정합니다';
+    document.getElementById('set-pwd-input').value = '';
+    document.getElementById('set-pwd-confirm').value = '';
+    document.getElementById('set-pwd-err').textContent = '';
+    document.getElementById('set-pwd-remove').style.display = note.locked ? 'block' : 'none';
+    document.getElementById('set-pwd-modal').classList.add('open');
+    document.getElementById('set-pwd-input').focus();
+  }
+
+  document.getElementById('set-pwd-remove').addEventListener('click', async () => {
+    if (!currentNote) return;
+    currentNote.locked = false;
+    currentNote.lockHash = null;
+    unlockedSet.delete(currentNote.id);
+    await save();
+    updateLockHideButtons();
+    showToast('🔓 잠금이 해제되었습니다');
+    document.getElementById('set-pwd-modal').classList.remove('open');
+    renderAll();
+  });
+
+  document.getElementById('set-pwd-confirm-btn').addEventListener('click', async () => {
+    const pw = document.getElementById('set-pwd-input').value;
+    const pw2 = document.getElementById('set-pwd-confirm').value;
+    const errEl = document.getElementById('set-pwd-err');
+    if (!pw) { errEl.textContent = '비밀번호를 입력하세요'; return; }
+    if (pw !== pw2) { errEl.textContent = '비밀번호가 일치하지 않습니다'; return; }
+    if (pw.length < 4) { errEl.textContent = '4자리 이상 입력하세요'; return; }
+    currentNote.locked = true;
+    currentNote.lockHash = await hashStr(pw);
+    unlockedSet.add(currentNote.id);
+    await save();
+    updateLockHideButtons();
+    showToast('🔒 비밀번호가 설정되었습니다');
+    document.getElementById('set-pwd-modal').classList.remove('open');
+    renderAll();
+  });
+
+  document.getElementById('set-pwd-cancel').addEventListener('click', () => document.getElementById('set-pwd-modal').classList.remove('open'));
+  document.getElementById('set-pwd-modal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); });
+
+  // ── 숨기기 ──
+  document.getElementById('btn-hide-note').addEventListener('click', async () => {
+    if (!currentNote) return;
+    if (currentNote.hidden) {
+      currentNote.hidden = false;
+      await save();
+      updateLockHideButtons();
+      showToast('👁 숨김이 해제되었습니다');
+      renderAll();
+    } else {
+      currentNote.hidden = true;
+      await save();
+      currentNote = null;
+      showEditorState('none');
+      showToast('🙈 메모가 숨겨졌습니다');
+      renderAll();
+    }
+  });
+
+  // ── 숨긴 메모 보기 ──
+  document.getElementById('nav-hidden').addEventListener('click', async () => {
+    if (hiddenVisible) {
+      // 이미 보이는 상태면 그냥 필터 적용
+      applyHiddenFilter();
+      return;
+    }
+    if (!masterHash) {
+      // 마스터 비밀번호 설정 안 됨 → 설정 모달
+      openHiddenPwdModal('set');
+    } else {
+      // 비밀번호 입력 모달
+      openHiddenPwdModal('enter');
+    }
+  });
+
+  function openHiddenPwdModal(mode) {
+    const titleEl = document.getElementById('hidden-pwd-title');
+    const subEl = document.getElementById('hidden-pwd-sub');
+    const confirmEl = document.getElementById('hidden-pwd-confirm');
+    const inp = document.getElementById('hidden-pwd-input');
+    document.getElementById('hidden-pwd-err').textContent = '';
+    inp.value = '';
+    confirmEl.value = '';
+    if (mode === 'set') {
+      titleEl.textContent = '마스터 비밀번호 설정';
+      subEl.textContent = '숨긴 메모를 볼 때 사용할 비밀번호를 설정하세요';
+      confirmEl.style.display = 'block';
+      document.getElementById('hidden-pwd-confirm-btn').dataset.mode = 'set';
+    } else {
+      titleEl.textContent = '숨긴 메모';
+      subEl.textContent = '마스터 비밀번호를 입력하세요';
+      confirmEl.style.display = 'none';
+      document.getElementById('hidden-pwd-confirm-btn').dataset.mode = 'enter';
+    }
+    document.getElementById('hidden-pwd-modal').classList.add('open');
+    inp.focus();
+  }
+
+  document.getElementById('hidden-pwd-confirm-btn').addEventListener('click', async () => {
+    const mode = document.getElementById('hidden-pwd-confirm-btn').dataset.mode;
+    const pw = document.getElementById('hidden-pwd-input').value;
+    const errEl = document.getElementById('hidden-pwd-err');
+    if (!pw) { errEl.textContent = '비밀번호를 입력하세요'; return; }
+    if (mode === 'set') {
+      const pw2 = document.getElementById('hidden-pwd-confirm').value;
+      if (pw !== pw2) { errEl.textContent = '비밀번호가 일치하지 않습니다'; return; }
+      if (pw.length < 4) { errEl.textContent = '4자리 이상 입력하세요'; return; }
+      masterHash = await hashStr(pw);
+      localStorage.setItem('masterHash', masterHash);
+      await save();
+      document.getElementById('hidden-pwd-modal').classList.remove('open');
+      hiddenVisible = true;
+      applyHiddenFilter();
+      showToast('🔐 마스터 비밀번호가 설정되었습니다');
+    } else {
+      const ok = await verifyHash(pw, masterHash);
+      if (ok) {
+        document.getElementById('hidden-pwd-modal').classList.remove('open');
+        hiddenVisible = true;
+        applyHiddenFilter();
+      } else {
+        errEl.textContent = '비밀번호가 틀렸습니다';
+        document.getElementById('hidden-pwd-input').value = '';
+      }
+    }
+  });
+
+  document.getElementById('hidden-pwd-cancel').addEventListener('click', () => document.getElementById('hidden-pwd-modal').classList.remove('open'));
+  document.getElementById('hidden-pwd-modal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); });
+  document.getElementById('hidden-pwd-input').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('hidden-pwd-confirm-btn').click(); });
+
+  function applyHiddenFilter() {
+    currentFilter = 'hidden'; currentCat = null;
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('nav-hidden').classList.add('active');
+    renderAll();
+  }
+
+  // ── 태그 ──
   document.getElementById('tag-input').addEventListener('keydown', e => {
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
@@ -993,6 +825,7 @@
   // ── 검색 ──
   document.getElementById('search-input').addEventListener('input', e => {
     searchQuery = e.target.value;
+    if (searchQuery && currentFilter === 'hidden') { hiddenVisible = false; currentFilter = 'all'; }
     if (searchQuery) {
       currentFilter = 'all';
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -1001,9 +834,10 @@
     renderAll();
   });
 
-  // ── 필터 ──
-  document.querySelectorAll('.nav-item').forEach(item => {
+  // ── 필터 (nav-hidden 제외) ──
+  document.querySelectorAll('.nav-item:not(#nav-hidden)').forEach(item => {
     item.addEventListener('click', () => {
+      hiddenVisible = false;
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
       item.classList.add('active');
       currentFilter = item.dataset.filter; currentCat = null; renderAll();
@@ -1022,24 +856,17 @@
   document.getElementById('btn-new-note').addEventListener('click', newNote);
   document.getElementById('btn-start').addEventListener('click', newNote);
   document.getElementById('btn-save').addEventListener('click', saveCurrentNote);
-
   document.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveCurrentNote(); }
   });
 
   // ── 카테고리 모달 ──
-  let editingCatId = null;
-
   const colorOpts = document.getElementById('color-options');
   CAT_COLORS.forEach(c => {
     const d = document.createElement('div');
     d.className = 'color-opt' + (c === selectedColor ? ' selected' : '');
     d.style.background = c;
-    d.addEventListener('click', () => {
-      selectedColor = c;
-      colorOpts.querySelectorAll('.color-opt').forEach(o => o.classList.remove('selected'));
-      d.classList.add('selected');
-    });
+    d.addEventListener('click', () => { selectedColor = c; colorOpts.querySelectorAll('.color-opt').forEach(o => o.classList.remove('selected')); d.classList.add('selected'); });
     colorOpts.appendChild(d);
   });
 
@@ -1062,8 +889,7 @@
     const cat = categories.find(c => c.id === catId);
     if (!cat) return;
     const cnt = notes.filter(n => n.cat === catId).length;
-    const msg = cnt > 0 ? `"${cat.name}" 카테고리를 삭제할까요?\n메모 ${cnt}개는 "카테고리 없음"으로 이동됩니다.` : `"${cat.name}" 카테고리를 삭제할까요?`;
-    if (!confirm(msg)) return;
+    if (!confirm(cnt > 0 ? `"${cat.name}" 삭제 시 메모 ${cnt}개가 "카테고리 없음"으로 이동됩니다.` : `"${cat.name}" 카테고리를 삭제할까요?`)) return;
     notes = notes.map(n => n.cat === catId ? {...n, cat: ''} : n);
     categories = categories.filter(c => c.id !== catId);
     if (currentFilter === 'cat' && currentCat === catId) {
@@ -1079,12 +905,8 @@
   document.getElementById('cat-confirm').addEventListener('click', () => {
     const name = document.getElementById('cat-name-input').value.trim();
     if (!name) return;
-    if (editingCatId) {
-      const cat = categories.find(c => c.id === editingCatId);
-      if (cat) { cat.name = name; cat.color = selectedColor; }
-    } else {
-      categories.push({ id: uid(), name, color: selectedColor });
-    }
+    if (editingCatId) { const cat = categories.find(c => c.id === editingCatId); if (cat) { cat.name = name; cat.color = selectedColor; } }
+    else { categories.push({ id: uid(), name, color: selectedColor }); }
     save(); renderAll();
     document.getElementById('cat-modal').classList.remove('open');
   });
