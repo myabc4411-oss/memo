@@ -37,7 +37,6 @@
       overflow: hidden;
     }
 
-    /* ── Sidebar ── */
     #sidebar {
       width: 260px;
       min-width: 260px;
@@ -62,9 +61,7 @@
       margin-bottom: 12px;
     }
 
-    .sidebar-search {
-      position: relative;
-    }
+    .sidebar-search { position: relative; }
 
     .sidebar-search input {
       width: 100%;
@@ -151,6 +148,7 @@
       color: var(--sidebar-muted);
       transition: background .15s, color .15s;
       user-select: none;
+      position: relative;
     }
 
     .category-item:hover { background: var(--sidebar-hover); color: var(--sidebar-text); }
@@ -168,6 +166,30 @@
       font-size: 11px;
       color: var(--sidebar-muted);
     }
+
+    .cat-actions {
+      display: none;
+      align-items: center;
+      gap: 2px;
+      margin-left: 4px;
+    }
+
+    .category-item:hover .cat-actions { display: flex; }
+
+    .cat-action-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 4px;
+      font-size: 12px;
+      color: var(--sidebar-muted);
+      line-height: 1;
+      transition: background .12s, color .12s;
+    }
+
+    .cat-action-btn:hover { background: #45475a; color: var(--sidebar-text); }
+    .cat-action-btn.del:hover { color: #f38ba8; }
 
     .btn-new-cat {
       display: flex;
@@ -191,15 +213,13 @@
       border-top: 1px solid #313244;
     }
 
-    /* ── Main area ── */
     #main {
       flex: 1;
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       overflow: hidden;
     }
 
-    /* ── Note list panel ── */
     #list-panel {
       width: 300px;
       min-width: 300px;
@@ -224,10 +244,7 @@
       color: var(--text);
     }
 
-    .list-actions {
-      display: flex;
-      gap: 6px;
-    }
+    .list-actions { display: flex; gap: 6px; }
 
     .icon-btn {
       background: none;
@@ -348,7 +365,6 @@
       line-height: 1.8;
     }
 
-    /* ── Editor panel ── */
     #editor-panel {
       flex: 1;
       display: flex;
@@ -469,7 +485,6 @@
     .no-note-icon { font-size: 48px; }
     .no-note p { font-size: 14px; }
 
-    /* ── Modal ── */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -547,16 +562,11 @@
       cursor: pointer;
     }
 
-    /* highlight */
     mark { background: #fef08a; border-radius: 2px; }
-
-    /* scrollbar */
-    #main { flex-direction: row; }
   </style>
 </head>
 <body>
 
-<!-- Sidebar -->
 <aside id="sidebar">
   <div class="sidebar-header">
     <div class="app-title">📒 내 메모장</div>
@@ -591,7 +601,6 @@
   </div>
 </aside>
 
-<!-- Note list -->
 <div id="list-panel">
   <div class="list-header">
     <span class="list-title" id="panel-title">전체 메모</span>
@@ -607,7 +616,6 @@
   <div id="note-list"></div>
 </div>
 
-<!-- Editor -->
 <div id="editor-panel">
   <div id="no-note" class="no-note">
     <div class="no-note-icon">✏️</div>
@@ -615,7 +623,7 @@
     <button class="btn-save" id="btn-start">새 메모 작성</button>
   </div>
 
-  <div id="editor-area" style="display:none; flex:1; flex-direction:column; overflow:hidden; display:none;">
+  <div id="editor-area" style="display:none; flex:1; flex-direction:column; overflow:hidden;">
     <div class="editor-toolbar">
       <input type="text" id="note-title" placeholder="제목 없음" />
       <div class="editor-meta">
@@ -632,14 +640,13 @@
         <button class="btn-save" id="btn-save">저장</button>
       </div>
     </div>
-    <textarea id="note-body" placeholder="메모를 입력하세요...&#10;&#10;마크다운 텍스트를 자유롭게 작성할 수 있습니다."></textarea>
+    <textarea id="note-body" placeholder="메모를 입력하세요..."></textarea>
   </div>
 </div>
 
-<!-- Category modal -->
 <div class="modal-overlay" id="cat-modal">
   <div class="modal">
-    <h3>카테고리 추가</h3>
+    <h3 id="cat-modal-title">카테고리 추가</h3>
     <input type="text" id="cat-name-input" placeholder="카테고리 이름" maxlength="20" />
     <div class="color-options" id="color-options"></div>
     <div class="modal-actions">
@@ -650,7 +657,6 @@
 </div>
 
 <script>
-  // ── State ──
   const CAT_COLORS = ['#89b4fa','#cba6f7','#f38ba8','#a6e3a1','#f9e2af','#94e2d5','#fab387','#eba0ac'];
   let notes = JSON.parse(localStorage.getItem('notes') || '[]');
   let categories = JSON.parse(localStorage.getItem('categories') || '[]');
@@ -682,64 +688,11 @@
   function fmtDate(ts) {
     const d = new Date(ts);
     const now = new Date();
-    const diffMs = now - d;
-    const diffD = Math.floor(diffMs / 86400000);
+    const diffD = Math.floor((now - d) / 86400000);
     if (diffD === 0) return '오늘 ' + d.toLocaleTimeString('ko', { hour: '2-digit', minute: '2-digit' });
     if (diffD === 1) return '어제';
     if (diffD < 7) return diffD + '일 전';
     return d.toLocaleDateString('ko', { month: 'short', day: 'numeric' });
-  }
-
-  // ── Render sidebar categories ──
-  function renderCategories() {
-    const el = document.getElementById('cat-list');
-    el.innerHTML = '';
-    categories.forEach(cat => {
-      const cnt = notes.filter(n => n.cat === cat.id).length;
-      const div = document.createElement('div');
-      div.className = 'category-item' + (currentFilter === 'cat' && currentCat === cat.id ? ' active' : '');
-      div.innerHTML = `<span class="cat-dot" style="background:${cat.color}"></span>${escHtml(cat.name)}<span class="count">${cnt}</span>`;
-      div.addEventListener('click', () => {
-        currentFilter = 'cat';
-        currentCat = cat.id;
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        renderAll();
-      });
-      el.appendChild(div);
-    });
-  }
-
-  // ── Render note list ──
-  function getFilteredNotes() {
-    let list = [...notes];
-    const q = searchQuery.trim().toLowerCase();
-    if (q) {
-      list = list.filter(n =>
-        n.title.toLowerCase().includes(q) ||
-        n.body.toLowerCase().includes(q) ||
-        (n.tags || []).some(t => t.toLowerCase().includes(q))
-      );
-    }
-    if (currentFilter === 'recent') {
-      const cutoff = Date.now() - 7 * 86400000;
-      list = list.filter(n => n.updated > cutoff);
-    } else if (currentFilter === 'starred') {
-      list = list.filter(n => n.starred);
-    } else if (currentFilter === 'cat') {
-      list = list.filter(n => n.cat === currentCat);
-    }
-
-    if (sortMode === 'updated') list.sort((a, b) => b.updated - a.updated);
-    else if (sortMode === 'created') list.sort((a, b) => b.created - a.created);
-    else list.sort((a, b) => a.title.localeCompare(b.title, 'ko'));
-
-    return list;
-  }
-
-  function highlight(text, q) {
-    if (!q) return escHtml(text);
-    const re = new RegExp('(' + escRe(q) + ')', 'gi');
-    return escHtml(text).replace(re, '<mark>$1</mark>');
   }
 
   function escHtml(s) {
@@ -750,97 +703,112 @@
     return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
+  function highlight(text, q) {
+    if (!q) return escHtml(text);
+    return escHtml(text).replace(new RegExp('(' + escRe(q) + ')', 'gi'), '<mark>$1</mark>');
+  }
+
+  function renderCategories() {
+    const el = document.getElementById('cat-list');
+    el.innerHTML = '';
+    categories.forEach(cat => {
+      const cnt = notes.filter(n => n.cat === cat.id).length;
+      const div = document.createElement('div');
+      div.className = 'category-item' + (currentFilter === 'cat' && currentCat === cat.id ? ' active' : '');
+      div.innerHTML = `
+        <span class="cat-dot" style="background:${cat.color}"></span>
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(cat.name)}</span>
+        <span class="count">${cnt}</span>
+        <span class="cat-actions">
+          <button class="cat-action-btn" data-action="edit" title="수정">✏️</button>
+          <button class="cat-action-btn del" data-action="del" title="삭제">🗑</button>
+        </span>
+      `;
+      div.addEventListener('click', e => {
+        if (e.target.closest('.cat-action-btn')) return;
+        currentFilter = 'cat'; currentCat = cat.id;
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        renderAll();
+      });
+      div.querySelector('[data-action="edit"]').addEventListener('click', e => { e.stopPropagation(); openCatModal(cat.id); });
+      div.querySelector('[data-action="del"]').addEventListener('click', e => { e.stopPropagation(); deleteCat(cat.id); });
+      el.appendChild(div);
+    });
+  }
+
+  function getFilteredNotes() {
+    let list = [...notes];
+    const q = searchQuery.trim().toLowerCase();
+    if (q) list = list.filter(n => n.title.toLowerCase().includes(q) || n.body.toLowerCase().includes(q) || (n.tags||[]).some(t => t.toLowerCase().includes(q)));
+    if (currentFilter === 'recent') list = list.filter(n => n.updated > Date.now() - 7*86400000);
+    else if (currentFilter === 'starred') list = list.filter(n => n.starred);
+    else if (currentFilter === 'cat') list = list.filter(n => n.cat === currentCat);
+    if (sortMode === 'updated') list.sort((a,b) => b.updated - a.updated);
+    else if (sortMode === 'created') list.sort((a,b) => b.created - a.created);
+    else list.sort((a,b) => a.title.localeCompare(b.title, 'ko'));
+    return list;
+  }
+
   function renderNoteList() {
     const el = document.getElementById('note-list');
     const list = getFilteredNotes();
     const q = searchQuery.trim().toLowerCase();
-
     document.getElementById('panel-title').textContent =
-      currentFilter === 'all' ? '전체 메모' :
-      currentFilter === 'recent' ? '최근 7일' :
-      currentFilter === 'starred' ? '즐겨찾기' :
-      (categories.find(c => c.id === currentCat)?.name || '카테고리');
-
+      currentFilter === 'all' ? '전체 메모' : currentFilter === 'recent' ? '최근 7일' :
+      currentFilter === 'starred' ? '즐겨찾기' : (categories.find(c => c.id === currentCat)?.name || '카테고리');
     if (!list.length) {
       el.innerHTML = `<div class="empty-state">${q ? '검색 결과가 없습니다.<br>다른 키워드로 검색해보세요.' : '메모가 없습니다.<br>새 메모를 작성해보세요.'}</div>`;
       return;
     }
-
     el.innerHTML = '';
     list.forEach(note => {
       const cat = categories.find(c => c.id === note.cat);
       const div = document.createElement('div');
       div.className = 'note-card' + (currentNote?.id === note.id ? ' active' : '');
-
-      const tagsHtml = (note.tags || []).map(t =>
-        `<span class="tag-chip" style="background:${cat?.color || '#eee'}22;color:${cat?.color || '#888'}">#${escHtml(t)}</span>`
-      ).join('');
-
-      const starHtml = note.starred ? '<span style="font-size:11px;">⭐</span>' : '';
-
       div.innerHTML = `
         <div class="note-card-title">${highlight(note.title || '제목 없음', q)}</div>
         <div class="note-card-preview">${highlight(note.body, q).replace(/\n/g,' ')}</div>
         <div class="note-card-meta">
           ${cat ? `<span class="tag-chip" style="background:${cat.color}22;color:${cat.color}">${escHtml(cat.name)}</span>` : ''}
-          ${tagsHtml}
-          ${starHtml}
+          ${(note.tags||[]).map(t => `<span class="tag-chip" style="background:${cat?.color||'#eee'}22;color:${cat?.color||'#888'}">#${escHtml(t)}</span>`).join('')}
+          ${note.starred ? '<span style="font-size:11px;">⭐</span>' : ''}
           <span class="note-date" style="margin-left:auto">${fmtDate(note.updated)}</span>
         </div>
-        <button class="note-card-del" data-id="${note.id}" title="삭제">🗑</button>
+        <button class="note-card-del" title="삭제">🗑</button>
       `;
-
-      div.addEventListener('click', e => {
-        if (e.target.closest('.note-card-del')) return;
-        openNote(note.id);
-      });
-
+      div.addEventListener('click', e => { if (!e.target.closest('.note-card-del')) openNote(note.id); });
       div.querySelector('.note-card-del').addEventListener('click', e => {
         e.stopPropagation();
         if (confirm('이 메모를 삭제할까요?')) {
           notes = notes.filter(n => n.id !== note.id);
-          if (currentNote?.id === note.id) {
-            currentNote = null;
-            showEditor(false);
-          }
-          save();
-          renderAll();
+          if (currentNote?.id === note.id) { currentNote = null; showEditor(false); }
+          save(); renderAll();
         }
       });
-
       el.appendChild(div);
     });
   }
 
   function updateCounts() {
     document.getElementById('cnt-all').textContent = notes.length;
-    const cutoff = Date.now() - 7 * 86400000;
-    document.getElementById('cnt-recent').textContent = notes.filter(n => n.updated > cutoff).length;
+    document.getElementById('cnt-recent').textContent = notes.filter(n => n.updated > Date.now() - 7*86400000).length;
     document.getElementById('cnt-starred').textContent = notes.filter(n => n.starred).length;
   }
 
-  function renderAll() {
-    renderCategories();
-    renderNoteList();
-    updateCounts();
-    updateCatSelect();
-  }
+  function renderAll() { renderCategories(); renderNoteList(); updateCounts(); updateCatSelect(); }
 
-  // ── Editor ──
   function showEditor(show) {
     document.getElementById('no-note').style.display = show ? 'none' : 'flex';
     const ea = document.getElementById('editor-area');
     ea.style.display = show ? 'flex' : 'none';
-    ea.style.flexDirection = 'column';
-    ea.style.flex = '1';
-    ea.style.overflow = 'hidden';
+    ea.style.flexDirection = 'column'; ea.style.flex = '1'; ea.style.overflow = 'hidden';
   }
 
   function updateCatSelect() {
     const sel = document.getElementById('note-cat');
     const val = sel.value;
     sel.innerHTML = '<option value="">카테고리 없음</option>' +
-      categories.map(c => `<option value="${c.id}" ${(currentNote?.cat === c.id) ? 'selected' : ''}>${escHtml(c.name)}</option>`).join('');
+      categories.map(c => `<option value="${c.id}" ${currentNote?.cat === c.id ? 'selected' : ''}>${escHtml(c.name)}</option>`).join('');
     if (val) sel.value = val;
   }
 
@@ -860,13 +828,11 @@
 
   function renderTags(tags) {
     const chips = document.getElementById('tag-chips');
-    chips.innerHTML = tags.map(t =>
-      `<span class="tag-chip" style="background:#eee;color:#555;cursor:pointer;" data-tag="${escHtml(t)}">#${escHtml(t)} ×</span>`
-    ).join('');
+    chips.innerHTML = tags.map(t => `<span class="tag-chip" style="background:#eee;color:#555;cursor:pointer;" data-tag="${escHtml(t)}">#${escHtml(t)} ×</span>`).join('');
     chips.querySelectorAll('.tag-chip').forEach(chip => {
       chip.addEventListener('click', () => {
         if (!currentNote) return;
-        currentNote.tags = (currentNote.tags || []).filter(t => t !== chip.dataset.tag);
+        currentNote.tags = (currentNote.tags||[]).filter(t => t !== chip.dataset.tag);
         renderTags(currentNote.tags);
       });
     });
@@ -880,55 +846,37 @@
     currentNote.starred = document.getElementById('note-starred').checked;
     currentNote.updated = Date.now();
     const idx = notes.findIndex(n => n.id === currentNote.id);
-    if (idx >= 0) notes[idx] = currentNote;
-    else notes.unshift(currentNote);
+    if (idx >= 0) notes[idx] = currentNote; else notes.unshift(currentNote);
     save();
     document.getElementById('note-date').textContent = '수정: ' + fmtDate(currentNote.updated);
     renderAll();
   }
 
   function newNote() {
-    const note = {
-      id: uid(),
-      title: '',
-      body: '',
-      cat: currentFilter === 'cat' ? currentCat : (categories[0]?.id || ''),
-      tags: [],
-      starred: false,
-      created: Date.now(),
-      updated: Date.now(),
-    };
-    currentNote = note;
-    notes.unshift(note);
-    save();
+    const note = { id: uid(), title: '', body: '', cat: currentFilter === 'cat' ? currentCat : (categories[0]?.id || ''), tags: [], starred: false, created: Date.now(), updated: Date.now() };
+    currentNote = note; notes.unshift(note); save();
     showEditor(true);
     document.getElementById('note-title').value = '';
     document.getElementById('note-body').value = '';
     document.getElementById('note-starred').checked = false;
     document.getElementById('note-date').textContent = '방금 생성';
-    renderTags([]);
-    updateCatSelect();
+    renderTags([]); updateCatSelect();
     document.getElementById('note-cat').value = note.cat;
     renderAll();
     document.getElementById('note-title').focus();
   }
 
-  // ── Tag input ──
   document.getElementById('tag-input').addEventListener('keydown', e => {
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
       const val = e.target.value.trim().replace(/^#/, '');
       if (!val || !currentNote) return;
       currentNote.tags = currentNote.tags || [];
-      if (!currentNote.tags.includes(val)) {
-        currentNote.tags.push(val);
-        renderTags(currentNote.tags);
-      }
+      if (!currentNote.tags.includes(val)) { currentNote.tags.push(val); renderTags(currentNote.tags); }
       e.target.value = '';
     }
   });
 
-  // ── Search ──
   document.getElementById('search-input').addEventListener('input', e => {
     searchQuery = e.target.value;
     if (searchQuery) {
@@ -939,41 +887,31 @@
     renderAll();
   });
 
-  // ── Filter nav ──
   document.querySelectorAll('.nav-item').forEach(item => {
     item.addEventListener('click', () => {
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
       item.classList.add('active');
-      currentFilter = item.dataset.filter;
-      currentCat = null;
-      renderAll();
+      currentFilter = item.dataset.filter; currentCat = null; renderAll();
     });
   });
 
-  // ── Sort ──
   document.querySelectorAll('.sort-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      sortMode = btn.dataset.sort;
-      renderNoteList();
+      btn.classList.add('active'); sortMode = btn.dataset.sort; renderNoteList();
     });
   });
 
-  // ── Buttons ──
   document.getElementById('btn-new-note').addEventListener('click', newNote);
   document.getElementById('btn-start').addEventListener('click', newNote);
   document.getElementById('btn-save').addEventListener('click', saveCurrentNote);
 
-  // Auto-save on Ctrl+S
   document.addEventListener('keydown', e => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-      e.preventDefault();
-      saveCurrentNote();
-    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveCurrentNote(); }
   });
 
-  // ── Category modal ──
+  let editingCatId = null;
+
   const colorOpts = document.getElementById('color-options');
   CAT_COLORS.forEach(c => {
     const d = document.createElement('div');
@@ -987,34 +925,54 @@
     colorOpts.appendChild(d);
   });
 
-  document.getElementById('btn-add-cat').addEventListener('click', () => {
-    document.getElementById('cat-name-input').value = '';
+  function openCatModal(catId = null) {
+    editingCatId = catId;
+    const cat = catId ? categories.find(c => c.id === catId) : null;
+    document.getElementById('cat-modal-title').textContent = catId ? '카테고리 수정' : '카테고리 추가';
+    document.getElementById('cat-confirm').textContent = catId ? '저장' : '추가';
+    document.getElementById('cat-name-input').value = cat?.name || '';
+    selectedColor = cat?.color || CAT_COLORS[0];
+    colorOpts.querySelectorAll('.color-opt').forEach(o => {
+      const hex = '#' + (o.style.background.match(/\d+/g)||[]).slice(0,3).map(n=>parseInt(n).toString(16).padStart(2,'0')).join('');
+      o.classList.toggle('selected', hex === selectedColor);
+    });
     document.getElementById('cat-modal').classList.add('open');
     document.getElementById('cat-name-input').focus();
-  });
+  }
 
-  document.getElementById('cat-cancel').addEventListener('click', () => {
-    document.getElementById('cat-modal').classList.remove('open');
-  });
+  function deleteCat(catId) {
+    const cat = categories.find(c => c.id === catId);
+    if (!cat) return;
+    const cnt = notes.filter(n => n.cat === catId).length;
+    const msg = cnt > 0 ? `"${cat.name}" 카테고리를 삭제할까요?\n메모 ${cnt}개는 "카테고리 없음"으로 이동됩니다.` : `"${cat.name}" 카테고리를 삭제할까요?`;
+    if (!confirm(msg)) return;
+    notes = notes.map(n => n.cat === catId ? {...n, cat: ''} : n);
+    categories = categories.filter(c => c.id !== catId);
+    if (currentFilter === 'cat' && currentCat === catId) {
+      currentFilter = 'all'; currentCat = null;
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.querySelector('[data-filter="all"]').classList.add('active');
+    }
+    save(); renderAll();
+  }
 
+  document.getElementById('btn-add-cat').addEventListener('click', () => openCatModal());
+  document.getElementById('cat-cancel').addEventListener('click', () => document.getElementById('cat-modal').classList.remove('open'));
   document.getElementById('cat-confirm').addEventListener('click', () => {
     const name = document.getElementById('cat-name-input').value.trim();
     if (!name) return;
-    categories.push({ id: uid(), name, color: selectedColor });
-    save();
-    renderAll();
+    if (editingCatId) {
+      const cat = categories.find(c => c.id === editingCatId);
+      if (cat) { cat.name = name; cat.color = selectedColor; }
+    } else {
+      categories.push({ id: uid(), name, color: selectedColor });
+    }
+    save(); renderAll();
     document.getElementById('cat-modal').classList.remove('open');
   });
+  document.getElementById('cat-name-input').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('cat-confirm').click(); });
+  document.getElementById('cat-modal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); });
 
-  document.getElementById('cat-name-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') document.getElementById('cat-confirm').click();
-  });
-
-  document.getElementById('cat-modal').addEventListener('click', e => {
-    if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
-  });
-
-  // ── Init ──
   renderAll();
 </script>
 </body>
