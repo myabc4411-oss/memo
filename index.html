@@ -15,10 +15,8 @@
       --sidebar-hover: #313244;
       --sidebar-active: #45475a;
       --accent: #89b4fa;
-      --accent2: #cba6f7;
       --danger: #f38ba8;
       --success: #a6e3a1;
-      --warning: #f9e2af;
       --card-bg: #ffffff;
       --border: #e0e0d8;
       --text: #1e1e2e;
@@ -48,10 +46,7 @@
       overflow: hidden;
     }
 
-    .sidebar-header {
-      padding: 20px 16px 12px;
-      border-bottom: 1px solid #313244;
-    }
+    .sidebar-header { padding: 20px 16px 12px; border-bottom: 1px solid #313244; }
 
     .app-title {
       font-size: 18px;
@@ -83,15 +78,11 @@
       left: 9px;
       top: 50%;
       transform: translateY(-50%);
-      color: var(--sidebar-muted);
       font-size: 13px;
       pointer-events: none;
     }
 
-    .sidebar-nav {
-      padding: 12px 8px;
-      border-bottom: 1px solid #313244;
-    }
+    .sidebar-nav { padding: 12px 8px; border-bottom: 1px solid #313244; }
 
     .nav-item {
       display: flex;
@@ -118,14 +109,8 @@
       border-radius: 10px;
     }
 
-    .sidebar-categories {
-      flex: 1;
-      overflow-y: auto;
-      padding: 8px;
-    }
-
+    .sidebar-categories { flex: 1; overflow-y: auto; padding: 8px; }
     .sidebar-categories::-webkit-scrollbar { width: 4px; }
-    .sidebar-categories::-webkit-scrollbar-track { background: transparent; }
     .sidebar-categories::-webkit-scrollbar-thumb { background: #45475a; border-radius: 2px; }
 
     .section-label {
@@ -154,26 +139,11 @@
     .category-item:hover { background: var(--sidebar-hover); color: var(--sidebar-text); }
     .category-item.active { background: var(--sidebar-active); color: var(--sidebar-text); }
 
-    .cat-dot {
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
+    .cat-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 
-    .category-item .count {
-      margin-left: auto;
-      font-size: 11px;
-      color: var(--sidebar-muted);
-    }
+    .category-item .count { margin-left: auto; font-size: 11px; color: var(--sidebar-muted); }
 
-    .cat-actions {
-      display: none;
-      align-items: center;
-      gap: 2px;
-      margin-left: 4px;
-    }
-
+    .cat-actions { display: none; align-items: center; gap: 2px; margin-left: 4px; }
     .category-item:hover .cat-actions { display: flex; }
 
     .cat-action-btn {
@@ -208,16 +178,32 @@
 
     .btn-new-cat:hover { background: var(--sidebar-hover); color: var(--sidebar-text); }
 
-    .sidebar-footer {
-      padding: 12px 8px;
-      border-top: 1px solid #313244;
+    .sidebar-footer { padding: 12px 8px; border-top: 1px solid #313244; display: flex; flex-direction: column; gap: 8px; }
+
+    .btn-drive {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      width: 100%;
+      padding: 9px 10px;
+      background: #313244;
+      border: 1px solid #45475a;
+      border-radius: 8px;
+      color: var(--sidebar-text);
+      font-size: 12.5px;
+      cursor: pointer;
+      transition: background .15s, border-color .15s;
+      font-family: inherit;
     }
 
-    #main {
-      flex: 1;
-      display: flex;
-      flex-direction: row;
-      overflow: hidden;
+    .btn-drive:hover { background: #45475a; }
+    .btn-drive.connected { border-color: #a6e3a1; color: #a6e3a1; }
+
+    .drive-status {
+      font-size: 10.5px;
+      color: var(--sidebar-muted);
+      text-align: center;
     }
 
     #list-panel {
@@ -238,12 +224,7 @@
       justify-content: space-between;
     }
 
-    .list-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text);
-    }
-
+    .list-title { font-size: 14px; font-weight: 600; color: var(--text); }
     .list-actions { display: flex; gap: 6px; }
 
     .icon-btn {
@@ -279,12 +260,7 @@
 
     .sort-btn.active { background: var(--accent); color: #fff; }
 
-    #note-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 8px;
-    }
-
+    #note-list { flex: 1; overflow-y: auto; padding: 8px; }
     #note-list::-webkit-scrollbar { width: 4px; }
     #note-list::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
 
@@ -323,21 +299,10 @@
       margin-bottom: 8px;
     }
 
-    .note-card-meta {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-
+    .note-card-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .note-date { font-size: 11px; color: var(--muted); }
 
-    .tag-chip {
-      font-size: 10.5px;
-      padding: 1px 7px;
-      border-radius: 10px;
-      font-weight: 500;
-    }
+    .tag-chip { font-size: 10.5px; padding: 1px 7px; border-radius: 10px; font-weight: 500; }
 
     .note-card-del {
       position: absolute;
@@ -357,13 +322,7 @@
     .note-card:hover .note-card-del { opacity: 1; }
     .note-card-del:hover { color: var(--danger); }
 
-    .empty-state {
-      text-align: center;
-      color: var(--muted);
-      padding: 40px 20px;
-      font-size: 13px;
-      line-height: 1.8;
-    }
+    .empty-state { text-align: center; color: var(--muted); padding: 40px 20px; font-size: 13px; line-height: 1.8; }
 
     #editor-panel {
       flex: 1;
@@ -396,12 +355,7 @@
 
     #note-title::placeholder { color: #ccc; }
 
-    .editor-meta {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
+    .editor-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
     .cat-select {
       background: #f0f0eb;
@@ -437,11 +391,7 @@
 
     .tag-input-wrap input::placeholder { color: #bbb; }
 
-    .editor-date {
-      font-size: 11.5px;
-      color: var(--muted);
-      white-space: nowrap;
-    }
+    .editor-date { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
 
     .btn-save {
       background: var(--accent);
@@ -519,11 +469,7 @@
 
     .modal input:focus { border-color: var(--accent); }
 
-    .color-options {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 16px;
-    }
+    .color-options { display: flex; gap: 8px; margin-bottom: 16px; }
 
     .color-opt {
       width: 24px;
@@ -536,11 +482,7 @@
 
     .color-opt.selected, .color-opt:hover { border-color: #333; transform: scale(1.15); }
 
-    .modal-actions {
-      display: flex;
-      gap: 8px;
-      justify-content: flex-end;
-    }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
 
     .btn-cancel {
       background: #f0f0eb;
@@ -563,6 +505,24 @@
     }
 
     mark { background: #fef08a; border-radius: 2px; }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: #313244;
+      color: #cdd6f4;
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      opacity: 0;
+      transition: opacity .2s, transform .2s;
+      pointer-events: none;
+      z-index: 200;
+    }
+
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   </style>
 </head>
 <body>
@@ -595,9 +555,11 @@
   </div>
 
   <div class="sidebar-footer">
-    <div style="font-size:11px;color:var(--sidebar-muted);text-align:center;">
-      로컬 저장 · 개인용 메모장
-    </div>
+    <button class="btn-drive" id="btn-drive">
+      <span id="drive-icon">☁️</span>
+      <span id="drive-label">구글 드라이브 연결</span>
+    </button>
+    <div class="drive-status" id="drive-status">연결하면 자동 저장·동기화</div>
   </div>
 </aside>
 
@@ -656,7 +618,19 @@
   </div>
 </div>
 
+<div class="toast" id="toast"></div>
+
+<script src="https://accounts.google.com/gsi/client" async></script>
 <script>
+  // ── Google Drive 설정 ──
+  const CLIENT_ID = '241891084572-gjtpciga7htfd3boa894uube0o1kp4mo.apps.googleusercontent.com';
+  const SCOPE = 'https://www.googleapis.com/auth/drive.file';
+  let accessToken = null;
+  let driveFileId = localStorage.getItem('driveFileId') || null;
+  let tokenClient = null;
+  let driveConnected = false;
+
+  // ── 앱 상태 ──
   const CAT_COLORS = ['#89b4fa','#cba6f7','#f38ba8','#a6e3a1','#f9e2af','#94e2d5','#fab387','#eba0ac'];
   let notes = JSON.parse(localStorage.getItem('notes') || '[]');
   let categories = JSON.parse(localStorage.getItem('categories') || '[]');
@@ -673,21 +647,170 @@
       { id: uid(), name: '개인', color: '#cba6f7' },
       { id: uid(), name: '아이디어', color: '#a6e3a1' },
     ];
-    save();
+    saveLocal();
   }
 
   function uid() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2);
   }
 
-  function save() {
+  function showToast(msg, duration = 2200) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), duration);
+  }
+
+  // ── 저장 ──
+  function saveLocal() {
     localStorage.setItem('notes', JSON.stringify(notes));
     localStorage.setItem('categories', JSON.stringify(categories));
   }
 
+  async function save() {
+    saveLocal();
+    if (driveConnected && accessToken) {
+      await saveToDrive();
+    }
+  }
+
+  // ── Google Drive 함수 ──
+  window.onload = () => {
+    const savedToken = localStorage.getItem('gToken');
+    if (savedToken) {
+      accessToken = savedToken;
+      loadFromDrive().catch(() => {
+        accessToken = null;
+        localStorage.removeItem('gToken');
+        updateDriveUI(false);
+      });
+    }
+  };
+
+  function initTokenClient() {
+    if (tokenClient) return;
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPE,
+      callback: async (resp) => {
+        if (resp.error) { showToast('로그인 실패: ' + resp.error); return; }
+        accessToken = resp.access_token;
+        localStorage.setItem('gToken', accessToken);
+        await loadFromDrive();
+      },
+    });
+  }
+
+  document.getElementById('btn-drive').addEventListener('click', () => {
+    if (driveConnected) {
+      if (confirm('구글 드라이브 연결을 해제할까요?')) {
+        disconnectDrive();
+      }
+    } else {
+      initTokenClient();
+      tokenClient.requestAccessToken({ prompt: '' });
+    }
+  });
+
+  function disconnectDrive() {
+    if (accessToken) google.accounts.oauth2.revoke(accessToken, () => {});
+    accessToken = null;
+    driveConnected = false;
+    localStorage.removeItem('gToken');
+    updateDriveUI(false);
+    showToast('구글 드라이브 연결이 해제되었습니다');
+  }
+
+  function updateDriveUI(connected) {
+    driveConnected = connected;
+    const btn = document.getElementById('btn-drive');
+    const icon = document.getElementById('drive-icon');
+    const label = document.getElementById('drive-label');
+    const status = document.getElementById('drive-status');
+    if (connected) {
+      btn.classList.add('connected');
+      icon.textContent = '✅';
+      label.textContent = '드라이브 연결됨';
+      status.textContent = '저장 시 자동으로 드라이브에 동기화';
+    } else {
+      btn.classList.remove('connected');
+      icon.textContent = '☁️';
+      label.textContent = '구글 드라이브 연결';
+      status.textContent = '연결하면 자동 저장·동기화';
+    }
+  }
+
+  async function findOrCreateFile() {
+    if (driveFileId) return;
+    const resp = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=name%3D'memo-notes.json'+and+trashed%3Dfalse&fields=files(id)`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    if (!resp.ok) throw new Error('Drive 접근 실패');
+    const data = await resp.json();
+    if (data.files && data.files.length > 0) {
+      driveFileId = data.files[0].id;
+    } else {
+      const form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify({ name: 'memo-notes.json', mimeType: 'application/json' })], { type: 'application/json' }));
+      form.append('file', new Blob([JSON.stringify({ notes: [], categories: [] })], { type: 'application/json' }));
+      const cr = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+        { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, body: form });
+      if (!cr.ok) throw new Error('파일 생성 실패');
+      const cd = await cr.json();
+      driveFileId = cd.id;
+    }
+    localStorage.setItem('driveFileId', driveFileId);
+  }
+
+  async function loadFromDrive() {
+    await findOrCreateFile();
+    const resp = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    if (!resp.ok) throw new Error('불러오기 실패');
+    const data = await resp.json();
+    if (Array.isArray(data.notes)) notes = data.notes;
+    if (Array.isArray(data.categories) && data.categories.length) categories = data.categories;
+    saveLocal();
+    updateDriveUI(true);
+    renderAll();
+    showToast('☁️ 드라이브에서 불러왔습니다');
+  }
+
+  async function saveToDrive() {
+    if (!driveFileId || !accessToken) return;
+    const resp = await fetch(
+      `https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,
+      {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes, categories }),
+      }
+    );
+    if (resp.status === 401) {
+      accessToken = null;
+      localStorage.removeItem('gToken');
+      updateDriveUI(false);
+      showToast('세션이 만료되었습니다. 다시 연결해주세요.');
+    }
+  }
+
+  // ── 유틸 ──
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function escRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+  function highlight(text, q) {
+    if (!q) return escHtml(text);
+    return escHtml(text).replace(new RegExp('(' + escRe(q) + ')', 'gi'), '<mark>$1</mark>');
+  }
+
   function fmtDate(ts) {
-    const d = new Date(ts);
-    const now = new Date();
+    const d = new Date(ts), now = new Date();
     const diffD = Math.floor((now - d) / 86400000);
     if (diffD === 0) return '오늘 ' + d.toLocaleTimeString('ko', { hour: '2-digit', minute: '2-digit' });
     if (diffD === 1) return '어제';
@@ -695,19 +818,7 @@
     return d.toLocaleDateString('ko', { month: 'short', day: 'numeric' });
   }
 
-  function escHtml(s) {
-    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-
-  function escRe(s) {
-    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  }
-
-  function highlight(text, q) {
-    if (!q) return escHtml(text);
-    return escHtml(text).replace(new RegExp('(' + escRe(q) + ')', 'gi'), '<mark>$1</mark>');
-  }
-
+  // ── 카테고리 렌더 ──
   function renderCategories() {
     const el = document.getElementById('cat-list');
     el.innerHTML = '';
@@ -722,8 +833,7 @@
         <span class="cat-actions">
           <button class="cat-action-btn" data-action="edit" title="수정">✏️</button>
           <button class="cat-action-btn del" data-action="del" title="삭제">🗑</button>
-        </span>
-      `;
+        </span>`;
       div.addEventListener('click', e => {
         if (e.target.closest('.cat-action-btn')) return;
         currentFilter = 'cat'; currentCat = cat.id;
@@ -736,6 +846,7 @@
     });
   }
 
+  // ── 메모 목록 렌더 ──
   function getFilteredNotes() {
     let list = [...notes];
     const q = searchQuery.trim().toLowerCase();
@@ -770,12 +881,11 @@
         <div class="note-card-preview">${highlight(note.body, q).replace(/\n/g,' ')}</div>
         <div class="note-card-meta">
           ${cat ? `<span class="tag-chip" style="background:${cat.color}22;color:${cat.color}">${escHtml(cat.name)}</span>` : ''}
-          ${(note.tags||[]).map(t => `<span class="tag-chip" style="background:${cat?.color||'#eee'}22;color:${cat?.color||'#888'}">#${escHtml(t)}</span>`).join('')}
+          ${(note.tags||[]).map(t=>`<span class="tag-chip" style="background:${cat?.color||'#eee'}22;color:${cat?.color||'#888'}">#${escHtml(t)}</span>`).join('')}
           ${note.starred ? '<span style="font-size:11px;">⭐</span>' : ''}
           <span class="note-date" style="margin-left:auto">${fmtDate(note.updated)}</span>
         </div>
-        <button class="note-card-del" title="삭제">🗑</button>
-      `;
+        <button class="note-card-del" title="삭제">🗑</button>`;
       div.addEventListener('click', e => { if (!e.target.closest('.note-card-del')) openNote(note.id); });
       div.querySelector('.note-card-del').addEventListener('click', e => {
         e.stopPropagation();
@@ -797,6 +907,7 @@
 
   function renderAll() { renderCategories(); renderNoteList(); updateCounts(); updateCatSelect(); }
 
+  // ── 에디터 ──
   function showEditor(show) {
     document.getElementById('no-note').style.display = show ? 'none' : 'flex';
     const ea = document.getElementById('editor-area');
@@ -838,7 +949,7 @@
     });
   }
 
-  function saveCurrentNote() {
+  async function saveCurrentNote() {
     if (!currentNote) return;
     currentNote.title = document.getElementById('note-title').value.trim();
     currentNote.body = document.getElementById('note-body').value;
@@ -847,14 +958,15 @@
     currentNote.updated = Date.now();
     const idx = notes.findIndex(n => n.id === currentNote.id);
     if (idx >= 0) notes[idx] = currentNote; else notes.unshift(currentNote);
-    save();
+    await save();
     document.getElementById('note-date').textContent = '수정: ' + fmtDate(currentNote.updated);
+    if (driveConnected) showToast('☁️ 드라이브에 저장되었습니다');
     renderAll();
   }
 
   function newNote() {
     const note = { id: uid(), title: '', body: '', cat: currentFilter === 'cat' ? currentCat : (categories[0]?.id || ''), tags: [], starred: false, created: Date.now(), updated: Date.now() };
-    currentNote = note; notes.unshift(note); save();
+    currentNote = note; notes.unshift(note); saveLocal();
     showEditor(true);
     document.getElementById('note-title').value = '';
     document.getElementById('note-body').value = '';
@@ -866,6 +978,7 @@
     document.getElementById('note-title').focus();
   }
 
+  // ── 태그 입력 ──
   document.getElementById('tag-input').addEventListener('keydown', e => {
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
@@ -877,6 +990,7 @@
     }
   });
 
+  // ── 검색 ──
   document.getElementById('search-input').addEventListener('input', e => {
     searchQuery = e.target.value;
     if (searchQuery) {
@@ -887,6 +1001,7 @@
     renderAll();
   });
 
+  // ── 필터 ──
   document.querySelectorAll('.nav-item').forEach(item => {
     item.addEventListener('click', () => {
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -895,6 +1010,7 @@
     });
   });
 
+  // ── 정렬 ──
   document.querySelectorAll('.sort-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
@@ -902,6 +1018,7 @@
     });
   });
 
+  // ── 버튼 ──
   document.getElementById('btn-new-note').addEventListener('click', newNote);
   document.getElementById('btn-start').addEventListener('click', newNote);
   document.getElementById('btn-save').addEventListener('click', saveCurrentNote);
@@ -910,6 +1027,7 @@
     if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveCurrentNote(); }
   });
 
+  // ── 카테고리 모달 ──
   let editingCatId = null;
 
   const colorOpts = document.getElementById('color-options');
