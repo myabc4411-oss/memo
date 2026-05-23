@@ -103,6 +103,7 @@
     .editor-date { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
     .btn-save { background: var(--accent); color: #fff; border: none; border-radius: 7px; padding: 6px 16px; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity .15s; }
     .btn-save:hover { opacity: 0.88; }
+    .btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
     .btn-icon-tool { background: #f0f0eb; border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; font-size: 14px; cursor: pointer; transition: background .15s; line-height: 1; }
     .btn-icon-tool:hover { background: var(--border); }
     .btn-icon-tool.active-lock { background: #fef3cd; border-color: #f9e2af; }
@@ -121,6 +122,19 @@
     #locked-overlay input.shake { animation: shake .3s; }
     #locked-overlay .btn-unlock { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 9px 28px; font-size: 14px; font-weight: 600; cursor: pointer; }
     #locked-overlay .err { color: var(--danger); font-size: 12.5px; }
+
+    /* 저장 상태 인디케이터 */
+    #save-status {
+      font-size: 11.5px;
+      padding: 3px 8px;
+      border-radius: 5px;
+      white-space: nowrap;
+      transition: all .2s;
+    }
+    #save-status.idle { color: var(--muted); }
+    #save-status.saving { color: #f9e2af; background: #3d3820; }
+    #save-status.saved { color: var(--success); }
+    #save-status.error { color: var(--danger); }
 
     @keyframes shake {
       0%,100% { transform: translateX(0); }
@@ -223,6 +237,7 @@
           <input type="text" id="tag-input" placeholder="태그 입력 후 Enter" />
         </div>
         <span class="editor-date" id="note-date"></span>
+        <span id="save-status" class="idle"></span>
         <button class="btn-save" id="btn-save">저장</button>
       </div>
     </div>
@@ -282,6 +297,13 @@
   let tokenClient = null;
   let driveConnected = false;
 
+  // ── 저장 최적화 변수 ──────────────────────────────────────────
+  let isSavingToDrive = false;       // 드라이브 저장 중 여부
+  let pendingDriveSave = false;       // 저장 중에 또 요청이 왔으면 true
+  let lastSavedJson = null;           // 마지막으로 저장된 JSON (중복 저장 방지)
+  let saveDebounceTimer = null;       // Ctrl+S 디바운스 타이머
+  // ─────────────────────────────────────────────────────────────
+
   const CAT_COLORS = ['#89b4fa','#cba6f7','#f38ba8','#a6e3a1','#f9e2af','#94e2d5','#fab387','#eba0ac'];
   let notes = JSON.parse(localStorage.getItem('notes') || '[]');
   let categories = JSON.parse(localStorage.getItem('categories') || '[]');
@@ -332,15 +354,85 @@
   }
   async function verifyHash(str, hash) { return await hashStr(str) === hash; }
 
+  // ── 저장 상태 UI ─────────────────────────────────────────────
+  function setSaveStatus(state, msg = '') {
+    const el = document.getElementById('save-status');
+    if (!el) return;
+    el.className = state;
+    el.textContent = msg;
+  }
+  // ─────────────────────────────────────────────────────────────
+
+  // ── localStorage 저장 (동기, 빠름) ───────────────────────────
   function saveLocal() {
     localStorage.setItem('notes', JSON.stringify(notes));
     localStorage.setItem('categories', JSON.stringify(categories));
     if (masterHash) localStorage.setItem('masterHash', masterHash);
   }
-  async function save() {
-    saveLocal();
-    if (driveConnected && accessToken) await saveToDrive();
+  // ─────────────────────────────────────────────────────────────
+
+  // ── 드라이브 저장 (비동기, 큐잉 방식) ────────────────────────
+  // 이미 저장 중이면 pending 플래그만 세우고 나중에 한 번 더 저장
+  async function saveToDriveQueued() {
+    if (!driveConnected || !accessToken || !driveFileId) return;
+
+    const currentJson = JSON.stringify({ notes, categories, masterHash });
+
+    // 변경사항 없으면 스킵
+    if (currentJson === lastSavedJson) return;
+
+    if (isSavingToDrive) {
+      pendingDriveSave = true;  // 현재 저장 완료 후 다시 저장
+      return;
+    }
+
+    isSavingToDrive = true;
+    setSaveStatus('saving', '☁️ 저장 중...');
+    document.getElementById('btn-save').disabled = true;
+
+    try {
+      const resp = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: currentJson,
+      });
+
+      if (resp.status === 401) {
+        accessToken = null;
+        localStorage.removeItem('gToken');
+        updateDriveUI(false);
+        showToast('세션 만료. 다시 연결해주세요.');
+        setSaveStatus('error', '⚠️ 세션 만료');
+      } else if (!resp.ok) {
+        setSaveStatus('error', '⚠️ 저장 실패');
+        showToast('드라이브 저장 실패. 재시도합니다.');
+      } else {
+        lastSavedJson = currentJson;
+        setSaveStatus('saved', '✓ 저장됨');
+        // 3초 후 상태 초기화
+        setTimeout(() => setSaveStatus('idle', ''), 3000);
+      }
+    } catch (e) {
+      setSaveStatus('error', '⚠️ 네트워크 오류');
+    } finally {
+      isSavingToDrive = false;
+      document.getElementById('btn-save').disabled = false;
+
+      // 저장 중에 pending이 생겼으면 한 번 더 저장
+      if (pendingDriveSave) {
+        pendingDriveSave = false;
+        saveToDriveQueued();
+      }
+    }
   }
+  // ─────────────────────────────────────────────────────────────
+
+  // ── 통합 save 함수 ────────────────────────────────────────────
+  async function save() {
+    saveLocal();                  // localStorage는 즉시 (동기, UI 블로킹 없음)
+    saveToDriveQueued();          // 드라이브는 비동기 백그라운드 (await 안 함)
+  }
+  // ─────────────────────────────────────────────────────────────
 
   window.onload = () => {
     const saved = localStorage.getItem('gToken');
@@ -409,20 +501,12 @@
     if (Array.isArray(data.notes)) notes = data.notes;
     if (Array.isArray(data.categories) && data.categories.length) categories = data.categories;
     if (data.masterHash) { masterHash = data.masterHash; localStorage.setItem('masterHash', masterHash); }
+    // 불러온 직후 lastSavedJson 초기화 (중복 저장 방지)
+    lastSavedJson = JSON.stringify({ notes, categories, masterHash });
     saveLocal();
     updateDriveUI(true);
     renderAll();
     showToast('☁️ 드라이브에서 불러왔습니다');
-  }
-
-  async function saveToDrive() {
-    if (!driveFileId || !accessToken) return;
-    const resp = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
-      method: 'PATCH',
-      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ notes, categories, masterHash }),
-    });
-    if (resp.status === 401) { accessToken = null; localStorage.removeItem('gToken'); updateDriveUI(false); showToast('세션 만료. 다시 연결해주세요.'); }
   }
 
   function renderCategories() {
@@ -565,6 +649,7 @@
     document.getElementById('note-cat').value = note.cat || '';
     document.getElementById('note-starred').checked = !!note.starred;
     document.getElementById('note-date').textContent = '수정: ' + fmtDate(note.updated);
+    setSaveStatus('idle', '');
     renderTags(note.tags || []);
     updateCatSelect();
     updateLockHideButtons();
@@ -603,6 +688,7 @@
     });
   }
 
+  // ── 핵심 저장 함수 (최적화) ───────────────────────────────────
   async function saveCurrentNote() {
     if (!currentNote) return;
     currentNote.title = document.getElementById('note-title').value.trim();
@@ -612,11 +698,14 @@
     currentNote.updated = Date.now();
     const idx = notes.findIndex(n => n.id === currentNote.id);
     if (idx >= 0) notes[idx] = currentNote; else notes.unshift(currentNote);
+
+    // localStorage는 즉시 저장 (동기), 드라이브는 백그라운드 (비동기)
     await save();
+
     document.getElementById('note-date').textContent = '수정: ' + fmtDate(currentNote.updated);
-    if (driveConnected) showToast('☁️ 드라이브에 저장되었습니다');
     renderAll();
   }
+  // ─────────────────────────────────────────────────────────────
 
   function newNote() {
     const note = { id: uid(), title: '', body: '', cat: currentFilter === 'cat' ? currentCat : (categories[0]?.id || ''), tags: [], starred: false, locked: false, lockHash: null, hidden: false, created: Date.now(), updated: Date.now() };
@@ -626,6 +715,7 @@
     document.getElementById('note-body').value = '';
     document.getElementById('note-starred').checked = false;
     document.getElementById('note-date').textContent = '방금 생성';
+    setSaveStatus('idle', '');
     renderTags([]); updateCatSelect();
     document.getElementById('note-cat').value = note.cat;
     updateLockHideButtons();
@@ -805,9 +895,17 @@
   document.getElementById('btn-new-note').addEventListener('click', newNote);
   document.getElementById('btn-start').addEventListener('click', newNote);
   document.getElementById('btn-save').addEventListener('click', saveCurrentNote);
+
+  // ── Ctrl+S 디바운스 처리 ──────────────────────────────────────
+  // 연속으로 Ctrl+S를 누르면 300ms 후 한 번만 저장
   document.addEventListener('keydown', e => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveCurrentNote(); }
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault();
+      clearTimeout(saveDebounceTimer);
+      saveDebounceTimer = setTimeout(() => saveCurrentNote(), 300);
+    }
   });
+  // ─────────────────────────────────────────────────────────────
 
   const colorOpts = document.getElementById('color-options');
   CAT_COLORS.forEach(c => {
