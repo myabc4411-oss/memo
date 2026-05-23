@@ -5,15 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>내 메모장</title>
 
-  <!-- CodeMirror 6 -->
-  <script type="module">
-    import { EditorView, basicSetup } from 'https://esm.sh/@codemirror/basic-setup@0.20.0';
-    import { EditorState } from 'https://esm.sh/@codemirror/state@6.4.1';
-    import { placeholder } from 'https://esm.sh/@codemirror/view@6.26.3';
-
-    window._cmLoaded = { EditorView, EditorState, placeholder };
-    window.dispatchEvent(new Event('cm-ready'));
-  </script>
+  <!-- CodeMirror 5 - 단일 파일 번들, 충돌 없음 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -108,47 +102,46 @@
     .btn-icon-tool.active-lock { background: #fef3cd; border-color: #f9e2af; }
     .btn-icon-tool.active-hide { background: #f0e6ff; border-color: #cba6f7; }
 
-    /* ── CodeMirror 에디터 영역 ── */
+    /* ── CodeMirror 5 스타일 오버라이드 ── */
     #cm-editor-wrap {
       flex: 1;
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      min-height: 0;
     }
-    /* CodeMirror 기본 스타일 오버라이드 */
-    .cm-editor {
+    .CodeMirror {
       flex: 1;
-      height: 100%;
+      height: 100% !important;
       font-family: 'Segoe UI', system-ui, sans-serif !important;
       font-size: 14.5px !important;
       line-height: 1.75 !important;
+      color: var(--text) !important;
       background: var(--editor-bg) !important;
+      border: none !important;
     }
-    .cm-editor.cm-focused { outline: none !important; }
-    .cm-scroller {
-      overflow: auto !important;
+    .CodeMirror-scroll {
       padding: 24px 28px !important;
     }
-    .cm-content {
-      color: var(--text) !important;
-      caret-color: var(--accent) !important;
-      white-space: pre-wrap !important;
-      word-break: break-word !important;
+    .CodeMirror-lines {
+      padding: 0 !important;
     }
-    .cm-line { padding: 0 !important; }
-    /* 플레이스홀더 */
-    .cm-placeholder { color: #ccc !important; }
+    /* 커서 색상 */
+    .CodeMirror-cursor { border-left-color: var(--accent) !important; }
     /* 선택 영역 */
-    .cm-selectionBackground { background: rgba(137,180,250,0.2) !important; }
-    .cm-focused .cm-selectionBackground { background: rgba(137,180,250,0.3) !important; }
-    /* 스크롤바 */
-    .cm-scroller::-webkit-scrollbar { width: 6px; }
-    .cm-scroller::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
+    .CodeMirror-selected { background: rgba(137,180,250,0.25) !important; }
+    .CodeMirror-focused .CodeMirror-selected { background: rgba(137,180,250,0.35) !important; }
     /* 줄번호 숨기기 */
-    .cm-gutters { display: none !important; }
-    /* 활성 줄 하이라이트 제거 */
-    .cm-activeLine { background: transparent !important; }
-    .cm-activeLineGutter { background: transparent !important; }
+    .CodeMirror-gutters { display: none !important; }
+    /* 활성 줄 배경 제거 */
+    .CodeMirror-activeline-background { background: transparent !important; }
+    /* 스크롤바 */
+    .CodeMirror-vscrollbar::-webkit-scrollbar { width: 6px; }
+    .CodeMirror-vscrollbar::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
+    /* 포커스 아웃라인 제거 */
+    .CodeMirror-focused { outline: none !important; }
+    /* 플레이스홀더 */
+    .CodeMirror-placeholder { color: #ccc !important; }
 
     /* 저장 상태 */
     #save-status { font-size: 11.5px; padding: 3px 8px; border-radius: 5px; white-space: nowrap; transition: all .2s; }
@@ -160,7 +153,6 @@
     .no-note { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--muted); gap: 12px; }
     .no-note-icon { font-size: 48px; }
     .no-note p { font-size: 14px; }
-
     #locked-overlay { flex: 1; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: var(--editor-bg); }
     #locked-overlay .lock-icon { font-size: 52px; }
     #locked-overlay p { font-size: 14px; color: var(--muted); }
@@ -172,7 +164,6 @@
 
     @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
 
-    /* 모달 */
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
     .modal-overlay.open { display: flex; }
     .modal { background: #fff; border-radius: 12px; padding: 24px; width: 340px; box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
@@ -243,7 +234,6 @@
     <p>메모를 선택하거나 새 메모를 작성하세요</p>
     <button class="btn-save" id="btn-start">새 메모 작성</button>
   </div>
-
   <div id="locked-overlay">
     <div class="lock-icon">🔒</div>
     <p>비밀번호로 잠긴 메모입니다</p>
@@ -251,7 +241,6 @@
     <div class="err" id="unlock-err"></div>
     <button class="btn-unlock" id="btn-unlock">열기</button>
   </div>
-
   <div id="editor-area" style="display:none; flex:1; flex-direction:column; overflow:hidden;">
     <div class="editor-toolbar">
       <input type="text" id="note-title" placeholder="제목 없음" />
@@ -272,12 +261,13 @@
         <button class="btn-save" id="btn-save">저장</button>
       </div>
     </div>
-    <!-- CodeMirror 마운트 포인트 -->
-    <div id="cm-editor-wrap"></div>
+    <div id="cm-editor-wrap">
+      <textarea id="cm-textarea"></textarea>
+    </div>
   </div>
 </div>
 
-<!-- 카테고리 모달 -->
+<!-- 모달들 -->
 <div class="modal-overlay" id="cat-modal">
   <div class="modal">
     <h3 id="cat-modal-title">카테고리 추가</h3>
@@ -289,8 +279,6 @@
     </div>
   </div>
 </div>
-
-<!-- 비밀번호 모달 -->
 <div class="modal-overlay" id="set-pwd-modal">
   <div class="modal">
     <h3 id="set-pwd-title">비밀번호 설정</h3>
@@ -305,8 +293,6 @@
     </div>
   </div>
 </div>
-
-<!-- 숨긴 메모 모달 -->
 <div class="modal-overlay" id="hidden-pwd-modal">
   <div class="modal">
     <h3 id="hidden-pwd-title">숨긴 메모</h3>
@@ -322,52 +308,40 @@
 </div>
 
 <div class="toast" id="toast"></div>
-
 <script src="https://accounts.google.com/gsi/client" async></script>
 
 <script>
-// ── CodeMirror 인스턴스 ───────────────────────────────────────
-let cmView = null;  // CodeMirror EditorView 인스턴스
+// ── CodeMirror 5 초기화 ───────────────────────────────────────
+let cmEditor = null;
 
-// CM이 로드되면 초기화
-window.addEventListener('cm-ready', () => {
-  const { EditorView, EditorState, placeholder } = window._cmLoaded;
-
-  const wrap = document.getElementById('cm-editor-wrap');
-
-  // 기본 EditorView 생성 (내용은 메모 열 때 교체)
-  cmView = new EditorView({
-    state: EditorState.create({
-      doc: '',
-      extensions: [
-        EditorView.lineWrapping,           // 줄 자동 줄바꿈
-        placeholder('메모를 입력하세요...'),
-        EditorView.theme({                 // 인라인 테마
-          '&': { height: '100%', background: 'var(--editor-bg)' },
-          '.cm-scroller': { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: '14.5px', lineHeight: '1.75' },
-        }),
-      ],
-    }),
-    parent: wrap,
+function initCM() {
+  if (cmEditor) return;
+  cmEditor = CodeMirror.fromTextArea(document.getElementById('cm-textarea'), {
+    lineWrapping: true,          // 줄 자동 줄바꿈
+    lineNumbers: false,          // 줄번호 숨기기
+    autofocus: false,
+    indentWithTabs: false,
+    electricChars: false,
+    smartIndent: false,
+    placeholder: '메모를 입력하세요...',
+    extraKeys: {
+      'Ctrl-S': () => saveCurrentNote(),
+      'Cmd-S':  () => saveCurrentNote(),
+    },
   });
-});
-
-// CodeMirror 텍스트 읽기
-function getCMText() {
-  if (!cmView) return '';
-  return cmView.state.doc.toString();
+  // 높이를 부모에 맞게
+  cmEditor.setSize('100%', '100%');
 }
 
-// CodeMirror 텍스트 세팅 (전체 교체)
+function getCMText() {
+  return cmEditor ? cmEditor.getValue() : '';
+}
+
 function setCMText(text) {
-  if (!cmView) return;
-  const { EditorState, placeholder } = window._cmLoaded;
-  const { EditorView } = window._cmLoaded;
-  cmView.dispatch({
-    changes: { from: 0, to: cmView.state.doc.length, insert: text || '' }
-  });
-  // 커서를 맨 앞으로
-  cmView.dispatch({ selection: { anchor: 0 } });
+  if (!cmEditor) return;
+  cmEditor.setValue(text || '');
+  cmEditor.clearHistory(); // undo 히스토리 초기화 (다른 메모 열 때)
+  cmEditor.scrollTo(0, 0);
 }
 
 // ── Google Drive ─────────────────────────────────────────────
@@ -377,8 +351,6 @@ let accessToken = null;
 let driveFileId = localStorage.getItem('driveFileId') || null;
 let tokenClient = null;
 let driveConnected = false;
-
-// 저장 최적화
 let isSavingToDrive = false;
 let pendingDriveSave = false;
 let lastSavedJson = null;
@@ -426,8 +398,7 @@ function fmtDate(ts) {
 }
 function showToast(msg, duration = 2200) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
+  t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), duration);
 }
 async function hashStr(str) {
@@ -435,7 +406,6 @@ async function hashStr(str) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 async function verifyHash(str, hash) { return await hashStr(str) === hash; }
-
 function setSaveStatus(state, msg = '') {
   const el = document.getElementById('save-status');
   if (!el) return;
@@ -481,13 +451,11 @@ async function saveToDriveQueued() {
   }
 }
 
-async function save() {
-  saveLocal();
-  saveToDriveQueued();
-}
+async function save() { saveLocal(); saveToDriveQueued(); }
 
 // ── Google Drive 연결 ─────────────────────────────────────────
 window.onload = () => {
+  initCM(); // CodeMirror 초기화
   const saved = localStorage.getItem('gToken');
   if (saved) {
     accessToken = saved;
@@ -578,8 +546,8 @@ function renderCategories() {
       <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(cat.name)}</span>
       <span class="count">${cnt}</span>
       <span class="cat-actions">
-        <button class="cat-action-btn" data-action="edit" title="수정">✏️</button>
-        <button class="cat-action-btn del" data-action="del" title="삭제">🗑</button>
+        <button class="cat-action-btn" data-action="edit">✏️</button>
+        <button class="cat-action-btn del" data-action="del">🗑</button>
       </span>`;
     div.addEventListener('click', e => {
       if (e.target.closest('.cat-action-btn')) return;
@@ -665,6 +633,10 @@ function showEditorState(state) {
   const ea = document.getElementById('editor-area');
   ea.style.display = state === 'editor' ? 'flex' : 'none';
   ea.style.flexDirection = 'column'; ea.style.flex = '1'; ea.style.overflow = 'hidden';
+  // 에디터 크기 재계산
+  if (state === 'editor' && cmEditor) {
+    setTimeout(() => cmEditor.refresh(), 10);
+  }
 }
 
 function updateCatSelect() {
@@ -680,10 +652,8 @@ function updateLockHideButtons() {
   const lockBtn = document.getElementById('btn-lock-note');
   const hideBtn = document.getElementById('btn-hide-note');
   lockBtn.textContent = currentNote.locked ? '🔒' : '🔓';
-  lockBtn.title = currentNote.locked ? '비밀번호 변경/해제' : '비밀번호 잠금';
   lockBtn.classList.toggle('active-lock', !!currentNote.locked);
   hideBtn.textContent = currentNote.hidden ? '🙈' : '👁';
-  hideBtn.title = currentNote.hidden ? '숨김 해제' : '메모 숨기기';
   hideBtn.classList.toggle('active-hide', !!currentNote.hidden);
 }
 
@@ -702,7 +672,7 @@ async function openNote(id) {
   }
   showEditorState('editor');
   document.getElementById('note-title').value = note.title;
-  setCMText(note.body);   // ← CodeMirror에 텍스트 세팅
+  setCMText(note.body);
   document.getElementById('note-cat').value = note.cat || '';
   document.getElementById('note-starred').checked = !!note.starred;
   document.getElementById('note-date').textContent = '수정: ' + fmtDate(note.updated);
@@ -710,11 +680,9 @@ async function openNote(id) {
   renderTags(note.tags || []);
   updateCatSelect();
   updateLockHideButtons();
-  // CodeMirror 포커스
-  setTimeout(() => cmView && cmView.focus(), 50);
+  setTimeout(() => cmEditor && cmEditor.focus(), 50);
 }
 
-// ── 잠금 해제 ─────────────────────────────────────────────────
 document.getElementById('btn-unlock').addEventListener('click', async () => {
   const pw = document.getElementById('unlock-input').value;
   if (!pw) return;
@@ -731,11 +699,8 @@ document.getElementById('btn-unlock').addEventListener('click', async () => {
     inp.value = '';
   }
 });
-document.getElementById('unlock-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('btn-unlock').click();
-});
+document.getElementById('unlock-input').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('btn-unlock').click(); });
 
-// ── 태그 ─────────────────────────────────────────────────────
 function renderTags(tags) {
   const chips = document.getElementById('tag-chips');
   chips.innerHTML = tags.map(t => `<span class="tag-chip" style="background:#eee;color:#555;cursor:pointer;" data-tag="${escHtml(t)}">#${escHtml(t)} ×</span>`).join('');
@@ -748,11 +713,10 @@ function renderTags(tags) {
   });
 }
 
-// ── 저장 ─────────────────────────────────────────────────────
 async function saveCurrentNote() {
   if (!currentNote) return;
   currentNote.title = document.getElementById('note-title').value.trim();
-  currentNote.body = getCMText();   // ← CodeMirror에서 텍스트 읽기
+  currentNote.body = getCMText();
   currentNote.cat = document.getElementById('note-cat').value;
   currentNote.starred = document.getElementById('note-starred').checked;
   currentNote.updated = Date.now();
@@ -763,7 +727,6 @@ async function saveCurrentNote() {
   renderAll();
 }
 
-// ── 새 메모 ───────────────────────────────────────────────────
 function newNote() {
   const note = {
     id: uid(), title: '', body: '',
@@ -785,12 +748,9 @@ function newNote() {
   document.getElementById('note-title').focus();
 }
 
-// ── 이벤트 바인딩 ────────────────────────────────────────────
 document.getElementById('btn-new-note').addEventListener('click', newNote);
 document.getElementById('btn-start').addEventListener('click', newNote);
 document.getElementById('btn-save').addEventListener('click', saveCurrentNote);
-
-// Ctrl+S
 document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 's') {
     e.preventDefault();
@@ -799,7 +759,6 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// 태그 입력
 document.getElementById('tag-input').addEventListener('keydown', e => {
   if (e.key === 'Enter' || e.key === ',') {
     e.preventDefault();
@@ -811,7 +770,6 @@ document.getElementById('tag-input').addEventListener('keydown', e => {
   }
 });
 
-// 검색
 document.getElementById('search-input').addEventListener('input', e => {
   searchQuery = e.target.value;
   if (searchQuery) {
@@ -822,7 +780,6 @@ document.getElementById('search-input').addEventListener('input', e => {
   renderAll();
 });
 
-// 네비게이션
 document.querySelectorAll('.nav-item:not(#nav-hidden)').forEach(item => {
   item.addEventListener('click', () => {
     hiddenVisible = false;
@@ -832,7 +789,6 @@ document.querySelectorAll('.nav-item:not(#nav-hidden)').forEach(item => {
   });
 });
 
-// 정렬
 document.querySelectorAll('.sort-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
@@ -840,14 +796,12 @@ document.querySelectorAll('.sort-btn').forEach(btn => {
   });
 });
 
-// ── 잠금 ─────────────────────────────────────────────────────
 document.getElementById('btn-lock-note').addEventListener('click', () => { if (!currentNote) return; openSetPwdModal(currentNote); });
 
 function openSetPwdModal(note) {
   document.getElementById('set-pwd-title').textContent = note.locked ? '비밀번호 변경/해제' : '비밀번호 설정';
   document.getElementById('set-pwd-sub').textContent = note.locked ? '새 비밀번호를 설정하거나 잠금을 해제하세요' : '이 메모에 비밀번호를 설정합니다';
-  document.getElementById('set-pwd-input').value = '';
-  document.getElementById('set-pwd-confirm').value = '';
+  document.getElementById('set-pwd-input').value = ''; document.getElementById('set-pwd-confirm').value = '';
   document.getElementById('set-pwd-err').textContent = '';
   document.getElementById('set-pwd-remove').style.display = note.locked ? 'block' : 'none';
   document.getElementById('set-pwd-modal').classList.add('open');
@@ -856,10 +810,8 @@ function openSetPwdModal(note) {
 
 document.getElementById('set-pwd-remove').addEventListener('click', async () => {
   if (!currentNote) return;
-  currentNote.locked = false; currentNote.lockHash = null;
-  unlockedSet.delete(currentNote.id);
-  await save(); updateLockHideButtons();
-  showToast('🔓 잠금이 해제되었습니다');
+  currentNote.locked = false; currentNote.lockHash = null; unlockedSet.delete(currentNote.id);
+  await save(); updateLockHideButtons(); showToast('🔓 잠금이 해제되었습니다');
   document.getElementById('set-pwd-modal').classList.remove('open'); renderAll();
 });
 
@@ -870,35 +822,28 @@ document.getElementById('set-pwd-confirm-btn').addEventListener('click', async (
   if (!pw) { errEl.textContent = '비밀번호를 입력하세요'; return; }
   if (pw !== pw2) { errEl.textContent = '비밀번호가 일치하지 않습니다'; return; }
   if (pw.length < 4) { errEl.textContent = '4자리 이상 입력하세요'; return; }
-  currentNote.locked = true; currentNote.lockHash = await hashStr(pw);
-  unlockedSet.add(currentNote.id);
-  await save(); updateLockHideButtons();
-  showToast('🔒 비밀번호가 설정되었습니다');
+  currentNote.locked = true; currentNote.lockHash = await hashStr(pw); unlockedSet.add(currentNote.id);
+  await save(); updateLockHideButtons(); showToast('🔒 비밀번호가 설정되었습니다');
   document.getElementById('set-pwd-modal').classList.remove('open'); renderAll();
 });
 
 document.getElementById('set-pwd-cancel').addEventListener('click', () => document.getElementById('set-pwd-modal').classList.remove('open'));
 document.getElementById('set-pwd-modal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); });
 
-// ── 숨기기 ───────────────────────────────────────────────────
 document.getElementById('btn-hide-note').addEventListener('click', async () => {
   if (!currentNote) return;
   if (currentNote.hidden) {
-    currentNote.hidden = false;
-    await save(); updateLockHideButtons();
+    currentNote.hidden = false; await save(); updateLockHideButtons();
     showToast('👁 숨김이 해제되었습니다'); renderAll();
   } else {
-    currentNote.hidden = true;
-    await save(); currentNote = null;
-    showEditorState('none');
-    showToast('🙈 메모가 숨겨졌습니다'); renderAll();
+    currentNote.hidden = true; await save(); currentNote = null;
+    showEditorState('none'); showToast('🙈 메모가 숨겨졌습니다'); renderAll();
   }
 });
 
 document.getElementById('nav-hidden').addEventListener('click', async () => {
   if (hiddenVisible) { applyHiddenFilter(); return; }
-  if (!masterHash) { openHiddenPwdModal('set'); }
-  else { openHiddenPwdModal('enter'); }
+  if (!masterHash) openHiddenPwdModal('set'); else openHiddenPwdModal('enter');
 });
 
 function openHiddenPwdModal(mode) {
@@ -917,8 +862,7 @@ function openHiddenPwdModal(mode) {
     confirmEl.style.display = 'none';
     document.getElementById('hidden-pwd-confirm-btn').dataset.mode = 'enter';
   }
-  document.getElementById('hidden-pwd-modal').classList.add('open');
-  inp.focus();
+  document.getElementById('hidden-pwd-modal').classList.add('open'); inp.focus();
 }
 
 document.getElementById('hidden-pwd-confirm-btn').addEventListener('click', async () => {
@@ -930,20 +874,16 @@ document.getElementById('hidden-pwd-confirm-btn').addEventListener('click', asyn
     const pw2 = document.getElementById('hidden-pwd-confirm').value;
     if (pw !== pw2) { errEl.textContent = '비밀번호가 일치하지 않습니다'; return; }
     if (pw.length < 4) { errEl.textContent = '4자리 이상 입력하세요'; return; }
-    masterHash = await hashStr(pw);
-    localStorage.setItem('masterHash', masterHash);
-    await save();
+    masterHash = await hashStr(pw); localStorage.setItem('masterHash', masterHash); await save();
     document.getElementById('hidden-pwd-modal').classList.remove('open');
-    hiddenVisible = true; applyHiddenFilter();
-    showToast('🔐 마스터 비밀번호가 설정되었습니다');
+    hiddenVisible = true; applyHiddenFilter(); showToast('🔐 마스터 비밀번호가 설정되었습니다');
   } else {
     const ok = await verifyHash(pw, masterHash);
     if (ok) {
       document.getElementById('hidden-pwd-modal').classList.remove('open');
       hiddenVisible = true; applyHiddenFilter();
     } else {
-      errEl.textContent = '비밀번호가 틀렸습니다';
-      document.getElementById('hidden-pwd-input').value = '';
+      errEl.textContent = '비밀번호가 틀렸습니다'; document.getElementById('hidden-pwd-input').value = '';
     }
   }
 });
@@ -955,21 +895,15 @@ document.getElementById('hidden-pwd-input').addEventListener('keydown', e => { i
 function applyHiddenFilter() {
   currentFilter = 'hidden'; currentCat = null;
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('nav-hidden').classList.add('active');
-  renderAll();
+  document.getElementById('nav-hidden').classList.add('active'); renderAll();
 }
 
-// ── 카테고리 ─────────────────────────────────────────────────
 const colorOpts = document.getElementById('color-options');
 CAT_COLORS.forEach(c => {
   const d = document.createElement('div');
   d.className = 'color-opt' + (c === selectedColor ? ' selected' : '');
   d.style.background = c;
-  d.addEventListener('click', () => {
-    selectedColor = c;
-    colorOpts.querySelectorAll('.color-opt').forEach(o => o.classList.remove('selected'));
-    d.classList.add('selected');
-  });
+  d.addEventListener('click', () => { selectedColor = c; colorOpts.querySelectorAll('.color-opt').forEach(o => o.classList.remove('selected')); d.classList.add('selected'); });
   colorOpts.appendChild(d);
 });
 
@@ -1008,19 +942,13 @@ document.getElementById('cat-cancel').addEventListener('click', () => document.g
 document.getElementById('cat-confirm').addEventListener('click', () => {
   const name = document.getElementById('cat-name-input').value.trim();
   if (!name) return;
-  if (editingCatId) {
-    const cat = categories.find(c => c.id === editingCatId);
-    if (cat) { cat.name = name; cat.color = selectedColor; }
-  } else {
-    categories.push({ id: uid(), name, color: selectedColor });
-  }
-  save(); renderAll();
-  document.getElementById('cat-modal').classList.remove('open');
+  if (editingCatId) { const cat = categories.find(c => c.id === editingCatId); if (cat) { cat.name = name; cat.color = selectedColor; } }
+  else { categories.push({ id: uid(), name, color: selectedColor }); }
+  save(); renderAll(); document.getElementById('cat-modal').classList.remove('open');
 });
 document.getElementById('cat-name-input').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('cat-confirm').click(); });
 document.getElementById('cat-modal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); });
 
-// ── 초기 렌더링 ───────────────────────────────────────────────
 renderAll();
 </script>
 </body>
