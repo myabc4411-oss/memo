@@ -8,7 +8,6 @@
   <link rel="manifest" href="manifest.json">
   <title>내 메모장</title>
 
-  <!-- CodeMirror 5 - 단일 파일 번들, 충돌 없음 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
 
@@ -24,7 +23,7 @@
     body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; overflow: hidden; }
 
     /* 사이드바 */
-    #sidebar { width: 260px; min-width: 260px; background: var(--sidebar-bg); color: var(--sidebar-text); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+    #sidebar { width: 260px; min-width: 260px; background: var(--sidebar-bg); color: var(--sidebar-text); display: flex; flex-direction: column; height: 100vh; overflow: hidden; transition: transform 0.25s ease; }
     .sidebar-header { padding: 20px 16px 12px; border-bottom: 1px solid #313244; }
     .app-title { font-size: 18px; font-weight: 700; color: var(--accent); letter-spacing: -0.3px; margin-bottom: 12px; }
     .sidebar-search { position: relative; }
@@ -60,7 +59,7 @@
     .drive-status { font-size: 10.5px; color: var(--sidebar-muted); text-align: center; }
 
     /* 리스트 패널 */
-    #list-panel { width: 300px; min-width: 300px; background: #fafaf7; border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100vh; }
+    #list-panel { width: 300px; min-width: 300px; background: #fafaf7; border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100vh; transition: transform 0.25s ease; }
     .list-header { padding: 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
     .list-title { font-size: 14px; font-weight: 600; color: var(--text); }
     .icon-btn { background: none; border: none; cursor: pointer; padding: 5px 7px; border-radius: 6px; color: var(--muted); font-size: 15px; transition: background .15s, color .15s; }
@@ -87,7 +86,7 @@
     .empty-state { text-align: center; color: var(--muted); padding: 40px 20px; font-size: 13px; line-height: 1.8; }
 
     /* 에디터 패널 */
-    #editor-panel { flex: 1; display: flex; flex-direction: column; background: var(--editor-bg); height: 100vh; overflow: hidden; }
+    #editor-panel { flex: 1; display: flex; flex-direction: column; background: var(--editor-bg); height: 100vh; overflow: hidden; transition: transform 0.25s ease; }
     .editor-toolbar { padding: 12px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex-shrink: 0; }
     #note-title { flex: 1; font-size: 18px; font-weight: 700; border: none; outline: none; background: transparent; color: var(--text); min-width: 120px; }
     #note-title::placeholder { color: #ccc; }
@@ -105,46 +104,52 @@
     .btn-icon-tool.active-lock { background: #fef3cd; border-color: #f9e2af; }
     .btn-icon-tool.active-hide { background: #f0e6ff; border-color: #cba6f7; }
 
-    /* ── CodeMirror 5 스타일 오버라이드 ── */
-    #cm-editor-wrap {
-      flex: 1;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-    }
-    .CodeMirror {
-      flex: 1;
-      height: 100% !important;
-      font-family: 'Segoe UI', system-ui, sans-serif !important;
-      font-size: 14.5px !important;
-      line-height: 1.75 !important;
-      color: var(--text) !important;
-      background: var(--editor-bg) !important;
-      border: none !important;
-    }
-    .CodeMirror-scroll {
-      padding: 24px 28px !important;
-    }
-    .CodeMirror-lines {
-      padding: 0 !important;
-    }
-    /* 커서 색상 */
+    /* CodeMirror */
+    #cm-editor-wrap { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
+    .CodeMirror { flex: 1; height: 100% !important; font-family: 'Segoe UI', system-ui, sans-serif !important; font-size: 14.5px !important; line-height: 1.75 !important; color: var(--text) !important; background: var(--editor-bg) !important; border: none !important; }
+    .CodeMirror-scroll { padding: 24px 28px !important; }
+    .CodeMirror-lines { padding: 0 !important; }
     .CodeMirror-cursor { border-left-color: var(--accent) !important; }
-    /* 선택 영역 */
     .CodeMirror-selected { background: rgba(137,180,250,0.25) !important; }
     .CodeMirror-focused .CodeMirror-selected { background: rgba(137,180,250,0.35) !important; }
-    /* 줄번호 숨기기 */
     .CodeMirror-gutters { display: none !important; }
-    /* 활성 줄 배경 제거 */
     .CodeMirror-activeline-background { background: transparent !important; }
-    /* 스크롤바 */
     .CodeMirror-vscrollbar::-webkit-scrollbar { width: 6px; }
     .CodeMirror-vscrollbar::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
-    /* 포커스 아웃라인 제거 */
     .CodeMirror-focused { outline: none !important; }
-    /* 플레이스홀더 */
     .CodeMirror-placeholder { color: #ccc !important; }
+
+    /* ── 메모 내 검색바 ── */
+    #in-note-search-bar {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 20px;
+      background: #f0f0eb;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    #in-note-search-bar.visible { display: flex; }
+    #in-note-search-input {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 13px;
+      outline: none;
+      background: #fff;
+      color: var(--text);
+    }
+    #in-note-search-input:focus { border-color: var(--accent); }
+    .in-note-search-nav { display: flex; align-items: center; gap: 4px; }
+    .in-note-nav-btn { background: none; border: 1px solid var(--border); border-radius: 5px; padding: 3px 8px; cursor: pointer; font-size: 13px; color: var(--muted); transition: background .15s; }
+    .in-note-nav-btn:hover { background: var(--border); color: var(--text); }
+    #in-note-search-count { font-size: 12px; color: var(--muted); white-space: nowrap; min-width: 48px; text-align: center; }
+    #btn-close-in-search { background: none; border: none; cursor: pointer; font-size: 16px; color: var(--muted); padding: 2px 4px; border-radius: 4px; transition: color .15s; }
+    #btn-close-in-search:hover { color: var(--danger); }
+    /* 검색 하이라이트 */
+    .cm-searching { background: #fef08a !important; border-radius: 2px; }
+    .cm-searching-current { background: #f97316 !important; color: #fff !important; border-radius: 2px; }
 
     /* 저장 상태 */
     #save-status { font-size: 11.5px; padding: 3px 8px; border-radius: 5px; white-space: nowrap; transition: all .2s; }
@@ -186,13 +191,90 @@
     mark { background: #fef08a; border-radius: 2px; }
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(10px); background: #313244; color: #cdd6f4; padding: 9px 18px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none; z-index: 200; }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ══════════════════════════════════════
+       모바일 레이아웃 (768px 이하)
+    ══════════════════════════════════════ */
+    @media (max-width: 768px) {
+      body { overflow: hidden; position: relative; }
+
+      /* 세 패널 모두 전체화면, 절대 위치로 쌓기 */
+      #sidebar, #list-panel, #editor-panel {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        transition: transform 0.28s cubic-bezier(.4,0,.2,1);
+        z-index: 1;
+      }
+
+      /* 기본: 사이드바 보임, 나머지 오른쪽으로 숨김 */
+      #sidebar    { transform: translateX(0);    z-index: 3; }
+      #list-panel { transform: translateX(100%); z-index: 2; }
+      #editor-panel { transform: translateX(100%); z-index: 1; }
+
+      /* 상태 클래스로 패널 전환 */
+      body.show-list #sidebar      { transform: translateX(-100%); }
+      body.show-list #list-panel   { transform: translateX(0); }
+      body.show-list #editor-panel { transform: translateX(100%); }
+
+      body.show-editor #sidebar      { transform: translateX(-100%); }
+      body.show-editor #list-panel   { transform: translateX(-100%); }
+      body.show-editor #editor-panel { transform: translateX(0); }
+
+      /* 모바일 상단 네비 버튼 */
+      .mobile-back-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 6px 8px;
+        border-radius: 7px;
+        font-size: 14px;
+        color: var(--muted);
+        transition: background .15s;
+      }
+      .mobile-back-btn:hover { background: var(--border); }
+
+      /* 사이드바에 메뉴→리스트 이동 버튼 */
+      .sidebar-header { display: flex; flex-direction: column; gap: 10px; }
+      .app-title-row { display: flex; align-items: center; justify-content: space-between; }
+      .btn-sidebar-to-list {
+        background: var(--accent);
+        border: none;
+        border-radius: 7px;
+        color: #fff;
+        font-size: 12px;
+        padding: 5px 12px;
+        cursor: pointer;
+      }
+
+      /* 에디터 툴바 모바일 조정 */
+      .editor-toolbar { padding: 10px 14px; gap: 8px; }
+      #note-title { font-size: 16px; }
+      .editor-meta { gap: 6px; }
+
+      /* 모달 모바일 */
+      .modal { width: calc(100% - 40px); }
+    }
+
+    /* PC에서는 mobile-back-btn, btn-sidebar-to-list 숨기기 */
+    @media (min-width: 769px) {
+      .mobile-back-btn { display: none !important; }
+      .btn-sidebar-to-list { display: none !important; }
+      .app-title-row { display: contents; }
+    }
   </style>
 </head>
 <body>
 
 <aside id="sidebar">
   <div class="sidebar-header">
-    <div class="app-title">📒 내 메모장</div>
+    <div class="app-title-row">
+      <div class="app-title">📒 내 메모장</div>
+      <button class="btn-sidebar-to-list" id="btn-sidebar-to-list">메모 목록 →</button>
+    </div>
     <div class="sidebar-search">
       <span class="search-icon">🔍</span>
       <input type="text" id="search-input" placeholder="메모 검색..." autocomplete="off" />
@@ -220,6 +302,7 @@
 
 <div id="list-panel">
   <div class="list-header">
+    <button class="mobile-back-btn" id="btn-list-back">← 메뉴</button>
     <span class="list-title" id="panel-title">전체 메모</span>
     <div class="list-actions"><button class="icon-btn" id="btn-new-note" title="새 메모">✏️</button></div>
   </div>
@@ -246,12 +329,14 @@
   </div>
   <div id="editor-area" style="display:none; flex:1; flex-direction:column; overflow:hidden;">
     <div class="editor-toolbar">
+      <button class="mobile-back-btn" id="btn-editor-back">← 목록</button>
       <input type="text" id="note-title" placeholder="제목 없음" />
       <div class="editor-meta">
         <select class="cat-select" id="note-cat"></select>
         <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;">
           <input type="checkbox" id="note-starred" style="accent-color:var(--accent);"> ⭐
         </label>
+        <button class="btn-icon-tool" id="btn-in-note-search" title="메모 내 검색">🔎</button>
         <button class="btn-icon-tool" id="btn-lock-note" title="비밀번호 잠금">🔓</button>
         <button class="btn-icon-tool" id="btn-hide-note" title="메모 숨기기">👁</button>
         <div class="tag-input-wrap">
@@ -264,6 +349,18 @@
         <button class="btn-save" id="btn-save">저장</button>
       </div>
     </div>
+
+    <!-- 메모 내 검색바 -->
+    <div id="in-note-search-bar">
+      <input type="text" id="in-note-search-input" placeholder="메모 안에서 검색..." autocomplete="off" />
+      <div class="in-note-search-nav">
+        <button class="in-note-nav-btn" id="btn-in-note-prev">▲</button>
+        <span id="in-note-search-count">-</span>
+        <button class="in-note-nav-btn" id="btn-in-note-next">▼</button>
+      </div>
+      <button id="btn-close-in-search">✕</button>
+    </div>
+
     <div id="cm-editor-wrap">
       <textarea id="cm-textarea"></textarea>
     </div>
@@ -320,8 +417,8 @@ let cmEditor = null;
 function initCM() {
   if (cmEditor) return;
   cmEditor = CodeMirror.fromTextArea(document.getElementById('cm-textarea'), {
-    lineWrapping: true,          // 줄 자동 줄바꿈
-    lineNumbers: false,          // 줄번호 숨기기
+    lineWrapping: true,
+    lineNumbers: false,
     autofocus: false,
     indentWithTabs: false,
     electricChars: false,
@@ -330,22 +427,147 @@ function initCM() {
     extraKeys: {
       'Ctrl-S': () => saveCurrentNote(),
       'Cmd-S':  () => saveCurrentNote(),
+      'Ctrl-F': () => openInNoteSearch(),
+      'Cmd-F':  () => openInNoteSearch(),
     },
   });
-  // 높이를 부모에 맞게
   cmEditor.setSize('100%', '100%');
 }
 
-function getCMText() {
-  return cmEditor ? cmEditor.getValue() : '';
-}
-
+function getCMText() { return cmEditor ? cmEditor.getValue() : ''; }
 function setCMText(text) {
   if (!cmEditor) return;
   cmEditor.setValue(text || '');
-  cmEditor.clearHistory(); // undo 히스토리 초기화 (다른 메모 열 때)
+  cmEditor.clearHistory();
   cmEditor.scrollTo(0, 0);
 }
+
+// ── 메모 내 검색 ─────────────────────────────────────────────
+let inNoteMatches = [];
+let inNoteCurrent = -1;
+let inNoteMarkers = [];
+
+function openInNoteSearch() {
+  const bar = document.getElementById('in-note-search-bar');
+  bar.classList.add('visible');
+  const inp = document.getElementById('in-note-search-input');
+  inp.focus();
+  inp.select();
+  if (cmEditor) setTimeout(() => cmEditor.refresh(), 10);
+}
+
+function closeInNoteSearch() {
+  document.getElementById('in-note-search-bar').classList.remove('visible');
+  document.getElementById('in-note-search-input').value = '';
+  clearInNoteHighlights();
+  inNoteMatches = []; inNoteCurrent = -1;
+  document.getElementById('in-note-search-count').textContent = '-';
+  if (cmEditor) setTimeout(() => cmEditor.refresh(), 10);
+}
+
+function clearInNoteHighlights() {
+  inNoteMarkers.forEach(m => m.clear());
+  inNoteMarkers = [];
+}
+
+function runInNoteSearch(query) {
+  clearInNoteHighlights();
+  inNoteMatches = [];
+  inNoteCurrent = -1;
+  if (!cmEditor || !query) {
+    document.getElementById('in-note-search-count').textContent = '-';
+    return;
+  }
+  const content = cmEditor.getValue();
+  const lower = content.toLowerCase();
+  const q = query.toLowerCase();
+  let idx = 0;
+  while ((idx = lower.indexOf(q, idx)) !== -1) {
+    inNoteMatches.push(idx);
+    idx += q.length;
+  }
+  // 하이라이트 마킹
+  inNoteMatches.forEach((pos, i) => {
+    const from = cmEditor.posFromIndex(pos);
+    const to   = cmEditor.posFromIndex(pos + query.length);
+    const marker = cmEditor.markText(from, to, {
+      className: i === 0 ? 'cm-searching-current' : 'cm-searching'
+    });
+    inNoteMarkers.push(marker);
+  });
+  if (inNoteMatches.length > 0) {
+    inNoteCurrent = 0;
+    scrollToMatch(0);
+  }
+  updateInNoteCount();
+}
+
+function scrollToMatch(idx) {
+  if (!cmEditor || inNoteMatches.length === 0) return;
+  // 현재 하이라이트 업데이트
+  inNoteMarkers.forEach((m, i) => {
+    const pos = m.find();
+    if (!pos) return;
+    m.clear();
+    const newM = cmEditor.markText(pos.from, pos.to, {
+      className: i === idx ? 'cm-searching-current' : 'cm-searching'
+    });
+    inNoteMarkers[i] = newM;
+  });
+  // 스크롤
+  const matchPos = cmEditor.posFromIndex(inNoteMatches[idx]);
+  cmEditor.scrollIntoView({ line: matchPos.line, ch: matchPos.ch }, 100);
+  cmEditor.setCursor(matchPos);
+}
+
+function updateInNoteCount() {
+  const el = document.getElementById('in-note-search-count');
+  if (inNoteMatches.length === 0) { el.textContent = '없음'; return; }
+  el.textContent = `${inNoteCurrent + 1}/${inNoteMatches.length}`;
+}
+
+function inNoteNext() {
+  if (inNoteMatches.length === 0) return;
+  inNoteCurrent = (inNoteCurrent + 1) % inNoteMatches.length;
+  scrollToMatch(inNoteCurrent); updateInNoteCount();
+}
+function inNotePrev() {
+  if (inNoteMatches.length === 0) return;
+  inNoteCurrent = (inNoteCurrent - 1 + inNoteMatches.length) % inNoteMatches.length;
+  scrollToMatch(inNoteCurrent); updateInNoteCount();
+}
+
+document.getElementById('btn-in-note-search').addEventListener('click', openInNoteSearch);
+document.getElementById('btn-close-in-search').addEventListener('click', closeInNoteSearch);
+document.getElementById('btn-in-note-next').addEventListener('click', inNoteNext);
+document.getElementById('btn-in-note-prev').addEventListener('click', inNotePrev);
+document.getElementById('in-note-search-input').addEventListener('input', e => {
+  runInNoteSearch(e.target.value);
+});
+document.getElementById('in-note-search-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.shiftKey ? inNotePrev() : inNoteNext(); }
+  if (e.key === 'Escape') closeInNoteSearch();
+});
+
+// ── 모바일 패널 전환 ─────────────────────────────────────────
+function isMobile() { return window.innerWidth <= 768; }
+
+function showPanel(panel) {
+  if (!isMobile()) return;
+  document.body.classList.remove('show-list', 'show-editor');
+  if (panel === 'list')   document.body.classList.add('show-list');
+  if (panel === 'editor') document.body.classList.add('show-editor');
+}
+
+document.getElementById('btn-sidebar-to-list').addEventListener('click', () => showPanel('list'));
+document.getElementById('btn-list-back').addEventListener('click', () => showPanel('sidebar'));
+document.getElementById('btn-editor-back').addEventListener('click', () => showPanel('list'));
+
+// nav-item 클릭 시 모바일에서 자동으로 리스트 패널로
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => { if (isMobile()) showPanel('list'); });
+});
+document.getElementById('cat-list').addEventListener('click', () => { if (isMobile()) showPanel('list'); });
 
 // ── Google Drive ─────────────────────────────────────────────
 const CLIENT_ID = '241891084572-gjtpciga7htfd3boa894uube0o1kp4mo.apps.googleusercontent.com';
@@ -458,7 +680,7 @@ async function save() { saveLocal(); saveToDriveQueued(); }
 
 // ── Google Drive 연결 ─────────────────────────────────────────
 window.onload = () => {
-  initCM(); // CodeMirror 초기화
+  initCM();
   const saved = localStorage.getItem('gToken');
   if (saved) {
     accessToken = saved;
@@ -556,6 +778,7 @@ function renderCategories() {
       if (e.target.closest('.cat-action-btn')) return;
       currentFilter = 'cat'; currentCat = cat.id;
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      if (isMobile()) showPanel('list');
       renderAll();
     });
     div.querySelector('[data-action="edit"]').addEventListener('click', e => { e.stopPropagation(); openCatModal(cat.id); });
@@ -606,7 +829,12 @@ function renderNoteList() {
         <span class="note-date" style="margin-left:auto">${fmtDate(note.updated)}</span>
       </div>
       <button class="note-card-del" title="삭제">🗑</button>`;
-    div.addEventListener('click', e => { if (!e.target.closest('.note-card-del')) openNote(note.id); });
+    div.addEventListener('click', e => {
+      if (!e.target.closest('.note-card-del')) {
+        openNote(note.id);
+        if (isMobile()) showPanel('editor');
+      }
+    });
     div.querySelector('.note-card-del').addEventListener('click', e => {
       e.stopPropagation();
       if (confirm('이 메모를 삭제할까요?')) {
@@ -636,10 +864,9 @@ function showEditorState(state) {
   const ea = document.getElementById('editor-area');
   ea.style.display = state === 'editor' ? 'flex' : 'none';
   ea.style.flexDirection = 'column'; ea.style.flex = '1'; ea.style.overflow = 'hidden';
-  // 에디터 크기 재계산
-  if (state === 'editor' && cmEditor) {
-    setTimeout(() => cmEditor.refresh(), 10);
-  }
+  if (state === 'editor' && cmEditor) setTimeout(() => cmEditor.refresh(), 10);
+  // 에디터 열릴 때 검색바 초기화
+  if (state !== 'editor') closeInNoteSearch();
 }
 
 function updateCatSelect() {
@@ -665,6 +892,7 @@ async function openNote(id) {
   const note = notes.find(n => n.id === id);
   if (!note) return;
   currentNote = note;
+  closeInNoteSearch();
   renderNoteList();
   if (note.locked && !unlockedSet.has(note.id)) {
     showEditorState('locked');
@@ -748,6 +976,7 @@ function newNote() {
   document.getElementById('note-cat').value = note.cat;
   updateLockHideButtons();
   renderAll();
+  if (isMobile()) showPanel('editor');
   document.getElementById('note-title').focus();
 }
 
@@ -841,6 +1070,7 @@ document.getElementById('btn-hide-note').addEventListener('click', async () => {
   } else {
     currentNote.hidden = true; await save(); currentNote = null;
     showEditorState('none'); showToast('🙈 메모가 숨겨졌습니다'); renderAll();
+    if (isMobile()) showPanel('list');
   }
 });
 
@@ -954,7 +1184,8 @@ document.getElementById('cat-modal').addEventListener('click', e => { if (e.targ
 
 renderAll();
 </script>
-  <script>
+
+<script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./service-worker.js')
