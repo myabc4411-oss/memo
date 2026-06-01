@@ -272,20 +272,30 @@
       .editor-meta { gap: 6px; }
       .modal { width: calc(100% - 40px); }
 
-      /* 모바일 스크롤바 두껍게 */
-      .CodeMirror-vscrollbar::-webkit-scrollbar { width: 14px; }
-      .CodeMirror-vscrollbar::-webkit-scrollbar-thumb {
-        background: rgba(137,180,250,0.6);
-        border-radius: 7px;
-        border: 3px solid transparent;
-        background-clip: padding-box;
+      /* 모바일 스크롤바 — 터치 가능하게 크게 */
+      .CodeMirror-vscrollbar::-webkit-scrollbar { width: 20px !important; }
+      .CodeMirror-vscrollbar::-webkit-scrollbar-track {
+        background: rgba(0,0,0,0.06);
+        border-radius: 10px;
       }
-      #note-list::-webkit-scrollbar { width: 14px; }
+      .CodeMirror-vscrollbar::-webkit-scrollbar-thumb {
+        background: rgba(137,180,250,0.9) !important;
+        border-radius: 10px !important;
+        border: 3px solid transparent !important;
+        background-clip: padding-box !important;
+        min-height: 48px;
+      }
+      .CodeMirror-vscrollbar::-webkit-scrollbar-thumb:active {
+        background: #89b4fa !important;
+      }
+      #note-list::-webkit-scrollbar { width: 20px; }
+      #note-list::-webkit-scrollbar-track { background: rgba(0,0,0,0.06); border-radius: 10px; }
       #note-list::-webkit-scrollbar-thumb {
-        background: rgba(0,0,0,0.25);
-        border-radius: 7px;
+        background: rgba(0,0,0,0.3);
+        border-radius: 10px;
         border: 3px solid transparent;
         background-clip: padding-box;
+        min-height: 48px;
       }
     }
 
@@ -1007,6 +1017,76 @@ document.getElementById('cat-name-input').addEventListener('keydown',e=>{if(e.ke
 document.getElementById('cat-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open');});
 
 renderAll();
+
+// ── 모바일 커스텀 스크롤바 ────────────────────────────────────
+// 안드로이드 WebView CSS 스크롤바 터치 안 되는 문제 → JS로 직접 구현
+(function() {
+  if (!isMobile()) return;
+
+  const wrap = document.getElementById('cm-editor-wrap');
+  wrap.style.position = 'relative';
+
+  const bar = document.createElement('div');
+  bar.style.cssText = 'position:absolute;right:0;top:0;width:28px;height:100%;z-index:50;display:none;pointer-events:none;';
+  const thumb = document.createElement('div');
+  thumb.style.cssText = 'position:absolute;right:3px;width:22px;min-height:48px;background:rgba(137,180,250,0.9);border-radius:11px;touch-action:none;pointer-events:auto;box-shadow:0 1px 4px rgba(0,0,0,0.2);';
+  bar.appendChild(thumb);
+  wrap.appendChild(bar);
+
+  let dragging = false, startY = 0, startTop = 0;
+
+  function updateThumb() {
+    if (!cmEditor) return;
+    const si = cmEditor.getScrollInfo();
+    if (si.height <= si.clientHeight) { bar.style.display = 'none'; return; }
+    bar.style.display = 'block';
+    const trackH = wrap.clientHeight;
+    const thumbH = Math.max(48, (si.clientHeight / si.height) * trackH);
+    const maxTop = trackH - thumbH;
+    const top = (si.top / (si.height - si.clientHeight)) * maxTop;
+    thumb.style.height = thumbH + 'px';
+    thumb.style.top = Math.min(maxTop, Math.max(0, top)) + 'px';
+  }
+
+  function attachCM() {
+    if (!cmEditor) return;
+    cmEditor.on('scroll', updateThumb);
+    cmEditor.on('change', () => setTimeout(updateThumb, 50));
+    setTimeout(updateThumb, 100);
+  }
+
+  thumb.addEventListener('touchstart', e => {
+    dragging = true;
+    startY = e.touches[0].clientY;
+    startTop = parseFloat(thumb.style.top) || 0;
+    thumb.style.background = 'rgba(137,180,250,1)';
+    e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('touchmove', e => {
+    if (!dragging || !cmEditor) return;
+    const si = cmEditor.getScrollInfo();
+    const dy = e.touches[0].clientY - startY;
+    const thumbH = parseFloat(thumb.style.height) || 48;
+    const maxTop = wrap.clientHeight - thumbH;
+    const newTop = Math.min(maxTop, Math.max(0, startTop + dy));
+    const ratio = maxTop > 0 ? newTop / maxTop : 0;
+    cmEditor.scrollTo(null, ratio * (si.height - si.clientHeight));
+    e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('touchend', () => {
+    dragging = false;
+    thumb.style.background = 'rgba(137,180,250,0.9)';
+  });
+
+  // editor-area가 보일 때마다 연결
+  new MutationObserver(() => {
+    const ea = document.getElementById('editor-area');
+    if (ea.style.display === 'flex') setTimeout(attachCM, 150);
+    else bar.style.display = 'none';
+  }).observe(document.getElementById('editor-area'), { attributes: true, attributeFilter: ['style'] });
+})();
 </script>
 
 <script>
