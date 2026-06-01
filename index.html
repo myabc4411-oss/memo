@@ -543,7 +543,7 @@ function initCM() {
     setSaveStatus('idle', '✏️ 편집 중...');
     clearTimeout(autoSaveTimer);
     autoSaveTimer = setTimeout(() => {
-      saveCurrentNote();
+      saveCurrentNote(true); // silent: 화면 재렌더링 없이 저장
     }, 1500);
   });
 
@@ -910,14 +910,18 @@ function renderTags(tags){
   chips.querySelectorAll('.tag-chip').forEach(chip=>{chip.addEventListener('click',()=>{if(!currentNote)return;currentNote.tags=(currentNote.tags||[]).filter(t=>t!==chip.dataset.tag);renderTags(currentNote.tags);});});
 }
 
-async function saveCurrentNote(){
+async function saveCurrentNote(silent = false){
   if(!currentNote)return;
   currentNote.title=document.getElementById('note-title').value.trim();
   currentNote.body=getCMText(); currentNote.cat=document.getElementById('note-cat').value;
   currentNote.starred=document.getElementById('note-starred').checked; currentNote.updated=Date.now();
   const idx=notes.findIndex(n=>n.id===currentNote.id);
   if(idx>=0)notes[idx]=currentNote;else notes.unshift(currentNote);
-  await save(); document.getElementById('note-date').textContent='수정: '+fmtDate(currentNote.updated); renderAll();
+  await save();
+  document.getElementById('note-date').textContent='수정: '+fmtDate(currentNote.updated);
+  // 자동저장 시엔 renderAll 생략 (화면 재렌더링 없이 조용히 저장)
+  if (!silent) renderAll();
+  else renderNoteList(); // 메모 목록 날짜만 업데이트
 }
 
 function newNote(){
@@ -945,7 +949,7 @@ document.getElementById('note-title').addEventListener('input', () => {
   if (!currentNote) return;
   setSaveStatus('idle', '✏️ 편집 중...');
   clearTimeout(titleAutoSaveTimer);
-  titleAutoSaveTimer = setTimeout(() => saveCurrentNote(), 1500);
+  titleAutoSaveTimer = setTimeout(() => saveCurrentNote(true), 1500);
 });
 document.getElementById('note-cat').addEventListener('change', () => {
   if (!currentNote) return;
