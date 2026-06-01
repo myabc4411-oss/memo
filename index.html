@@ -459,6 +459,32 @@
 // ── 모바일 여부 ──────────────────────────────────────────────
 function isMobile() { return window.innerWidth <= 768; }
 
+// ── 모바일 키보드 올라올 때 에디터 높이 재조정 ──────────────
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', () => {
+    if (!isMobile()) return;
+    const editorWrap = document.getElementById('cm-editor-wrap');
+    if (!editorWrap) return;
+    // 키보드 높이만큼 에디터 패널 줄이기
+    const keyboardH = window.innerHeight - window.visualViewport.height;
+    document.getElementById('editor-panel').style.height =
+      (window.visualViewport.height) + 'px';
+    if (cmEditor) {
+      setTimeout(() => {
+        cmEditor.refresh();
+        // 커서가 보이도록 스크롤
+        const cursor = cmEditor.getCursor();
+        cmEditor.scrollIntoView(cursor, 80);
+      }, 50);
+    }
+  });
+  window.visualViewport.addEventListener('scroll', () => {
+    if (!isMobile() || !cmEditor) return;
+    const cursor = cmEditor.getCursor();
+    cmEditor.scrollIntoView(cursor, 80);
+  });
+}
+
 // ── 맨위/맨아래 버튼 ─────────────────────────────────────────
 function updateScrollBtns() {
   const btns = document.getElementById('scroll-btns');
@@ -509,6 +535,31 @@ function initCM() {
     },
   });
   cmEditor.setSize('100%', '100%');
+
+  // ── 자동저장: 타이핑 멈추고 1.5초 후 ──
+  let autoSaveTimer = null;
+  cmEditor.on('change', () => {
+    if (!currentNote) return;
+    setSaveStatus('idle', '✏️ 편집 중...');
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(() => {
+      saveCurrentNote();
+    }, 1500);
+  });
+
+  // ── 모바일 커서 자동 스크롤 (키보드에 안 가려지게) ──
+  cmEditor.on('cursorActivity', () => {
+    if (!isMobile()) return;
+    const cursor = cmEditor.getCursor();
+    const coords = cmEditor.charCoords(cursor, 'local');
+    const scrollInfo = cmEditor.getScrollInfo();
+    const visibleBottom = scrollInfo.top + scrollInfo.clientHeight;
+    // 커서가 화면 아래쪽 20% 안에 들어오면 스크롤
+    const threshold = scrollInfo.clientHeight * 0.2;
+    if (coords.bottom > visibleBottom - threshold) {
+      cmEditor.scrollTo(null, scrollInfo.top + (coords.bottom - (visibleBottom - threshold)));
+    }
+  });
 }
 function getCMText() { return cmEditor ? cmEditor.getValue() : ''; }
 function setCMText(text) {
@@ -886,6 +937,23 @@ document.getElementById('btn-start').addEventListener('click',newNote);
 document.getElementById('btn-save').addEventListener('click',saveCurrentNote);
 document.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();clearTimeout(saveDebounceTimer);saveDebounceTimer=setTimeout(()=>saveCurrentNote(),300);}
+});
+
+// ── 제목/카테고리/즐겨찾기 변경 시 자동저장 ──
+let titleAutoSaveTimer = null;
+document.getElementById('note-title').addEventListener('input', () => {
+  if (!currentNote) return;
+  setSaveStatus('idle', '✏️ 편집 중...');
+  clearTimeout(titleAutoSaveTimer);
+  titleAutoSaveTimer = setTimeout(() => saveCurrentNote(), 1500);
+});
+document.getElementById('note-cat').addEventListener('change', () => {
+  if (!currentNote) return;
+  saveCurrentNote();
+});
+document.getElementById('note-starred').addEventListener('change', () => {
+  if (!currentNote) return;
+  saveCurrentNote();
 });
 
 document.getElementById('tag-input').addEventListener('keydown',e=>{
