@@ -20,7 +20,8 @@
       --card-bg: #ffffff; --border: #e0e0d8; --text: #1e1e2e; --muted: #6c7086;
       --editor-bg: #ffffff; --shadow: 0 2px 12px rgba(0,0,0,0.08); --radius: 10px;
     }
-    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); height: 100vh; height: 100dvh; display: flex; overflow: hidden; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; overflow: hidden; }
+    @supports (height: 100dvh) { body { height: 100dvh; } }
 
     /* 사이드바 */
     #sidebar { width: 260px; min-width: 260px; background: var(--sidebar-bg); color: var(--sidebar-text); display: flex; flex-direction: column; height: 100vh; overflow: hidden; transition: transform 0.25s ease; }
@@ -228,7 +229,8 @@
       #sidebar, #list-panel, #editor-panel {
         position: absolute;
         top: 0; left: 0;
-        width: 100%; height: 100%; height: 100dvh;
+        width: 100%;
+        height: var(--app-height, 100vh);
         transition: transform 0.28s cubic-bezier(.4,0,.2,1);
         z-index: 1;
       }
@@ -602,10 +604,19 @@ document.getElementById('in-note-search-input').addEventListener('keydown', e =>
   if (e.key === 'Escape') closeInNoteSearch();
 });
 
+// ── 모바일 유틸 ──────────────────────────────────────────────
+function isMobile() { return window.innerWidth <= 768; }
+
+function setAppHeight() {
+  document.documentElement.style.setProperty('--app-height', window.innerHeight + 'px');
+}
+setAppHeight();
+window.addEventListener('resize', setAppHeight);
+window.addEventListener('orientationchange', () => setTimeout(setAppHeight, 300));
+
 // ── 스크롤 점프 버튼 ─────────────────────────────────────────
 function updateScrollBtns() {
   const btns = document.getElementById('scroll-btns');
-  // 에디터 패널이 보일 때 + 모바일일 때만 표시
   const editorVisible = document.getElementById('editor-area').style.display !== 'none';
   if (isMobile() && editorVisible) {
     btns.classList.add('visible');
@@ -623,9 +634,6 @@ document.getElementById('btn-scroll-bot').addEventListener('click', () => {
     cmEditor.scrollIntoView({ line: lastLine, ch: 0 });
   }
 });
-
-
-function isMobile() { return window.innerWidth <= 768; }
 
 function showPanel(panel) {
   if (!isMobile()) return;
