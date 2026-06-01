@@ -1,60 +1,25 @@
-const CACHE_NAME = 'memo-v2';
+const CACHE_NAME = 'memo-v3';
 
-const ASSETS = [
-  './',
-  './index.html',
-  './manifest.json',
-];
-
+// 설치 시 이전 캐시 전부 삭제
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
-  );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(
-        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
-      )
-    )
+      Promise.all(keys.map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
+// 항상 네트워크에서 최신 파일 받기 (캐시 사용 안 함)
 self.addEventListener('fetch', event => {
-  const url = event.request.url;
-  if (
-    url.includes('googleapis.com') ||
-    url.includes('accounts.google.com') ||
-    url.includes('gsi/client') ||
-    event.request.method !== 'GET'
-  ) {
-    return;
-  }
+  if (event.request.method !== 'GET') return;
+  if (event.request.url.includes('googleapis.com') ||
+      event.request.url.includes('accounts.google.com')) return;
 
   event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
-      return fetch(event.request).then(response => {
-        if (
-          response &&
-          response.status === 200 &&
-          (response.type === 'basic' || response.type === 'cors')
-        ) {
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, responseToCache);
-          });
-        }
-        return response;
-      }).catch(() => {
-        if (event.request.destination === 'document') {
-          return caches.match('./index.html');
-        }
-      });
-    })
+    fetch(event.request).catch(() => caches.match(event.request))
   );
 });
