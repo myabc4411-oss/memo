@@ -546,20 +546,6 @@ function initCM() {
       saveCurrentNote(true); // silent: 화면 재렌더링 없이 저장
     }, 1500);
   });
-
-  // ── 모바일 커서 자동 스크롤 (키보드에 안 가려지게) ──
-  cmEditor.on('cursorActivity', () => {
-    if (!isMobile()) return;
-    const cursor = cmEditor.getCursor();
-    const coords = cmEditor.charCoords(cursor, 'local');
-    const scrollInfo = cmEditor.getScrollInfo();
-    const visibleBottom = scrollInfo.top + scrollInfo.clientHeight;
-    // 커서가 화면 아래쪽 20% 안에 들어오면 스크롤
-    const threshold = scrollInfo.clientHeight * 0.2;
-    if (coords.bottom > visibleBottom - threshold) {
-      cmEditor.scrollTo(null, scrollInfo.top + (coords.bottom - (visibleBottom - threshold)));
-    }
-  });
 }
 function getCMText() { return cmEditor ? cmEditor.getValue() : ''; }
 function setCMText(text) {
@@ -1090,18 +1076,22 @@ document.getElementById('cat-modal').addEventListener('click',e=>{if(e.target===
 
 renderAll();
 
-// ── 모바일 커스텀 스크롤바 ────────────────────────────────────
-// 안드로이드 WebView CSS 스크롤바 터치 안 되는 문제 → JS로 직접 구현
+  // ── 모바일 커스텀 스크롤바 ────────────────────────────────────
 (function() {
   if (!isMobile()) return;
 
   const wrap = document.getElementById('cm-editor-wrap');
   wrap.style.position = 'relative';
 
+  // 스크롤바 너비만큼 CodeMirror 오른쪽 패딩 추가 (글자 안 가림)
+  const style = document.createElement('style');
+  style.textContent = '.CodeMirror-scroll { padding-right: 36px !important; }';
+  document.head.appendChild(style);
+
   const bar = document.createElement('div');
-  bar.style.cssText = 'position:absolute;right:0;top:0;width:28px;height:100%;z-index:50;display:none;pointer-events:none;';
+  bar.style.cssText = 'position:absolute;right:0;top:0;width:30px;height:100%;z-index:50;display:none;pointer-events:none;';
   const thumb = document.createElement('div');
-  thumb.style.cssText = 'position:absolute;right:3px;width:22px;min-height:48px;background:rgba(137,180,250,0.9);border-radius:11px;touch-action:none;pointer-events:auto;box-shadow:0 1px 4px rgba(0,0,0,0.2);';
+  thumb.style.cssText = 'position:absolute;right:4px;width:22px;min-height:48px;background:rgba(137,180,250,0.85);border-radius:11px;touch-action:none;pointer-events:auto;box-shadow:0 1px 4px rgba(0,0,0,0.2);';
   bar.appendChild(thumb);
   wrap.appendChild(bar);
 
@@ -1149,10 +1139,9 @@ renderAll();
 
   document.addEventListener('touchend', () => {
     dragging = false;
-    thumb.style.background = 'rgba(137,180,250,0.9)';
+    thumb.style.background = 'rgba(137,180,250,0.85)';
   });
 
-  // editor-area가 보일 때마다 연결
   new MutationObserver(() => {
     const ea = document.getElementById('editor-area');
     if (ea.style.display === 'flex') setTimeout(attachCM, 150);
