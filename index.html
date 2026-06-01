@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
   <title>내 메모장</title>
 
   <!-- CodeMirror 5 - 단일 파일 번들, 충돌 없음 -->
@@ -950,6 +953,15 @@ document.getElementById('cat-name-input').addEventListener('keydown', e => { if 
 document.getElementById('cat-modal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); });
 
 renderAll();
+</script>
+  <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./service-worker.js')
+        .then(reg => console.log('SW 등록 완료:', reg.scope))
+        .catch(err => console.log('SW 등록 실패:', err));
+    });
+  }
 </script>
 </body>
 </html>
