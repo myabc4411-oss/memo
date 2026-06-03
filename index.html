@@ -782,7 +782,13 @@ function getFilteredNotes() {
   let list=[...notes];
   const q=searchQuery.trim().toLowerCase();
   list=currentFilter==='hidden'?list.filter(n=>n.hidden):list.filter(n=>!n.hidden);
-  if(q) list=list.filter(n=>n.title.toLowerCase().includes(q)||n.body.toLowerCase().includes(q)||(n.tags||[]).some(t=>t.toLowerCase().includes(q)));
+  if(q) {
+    // 제목 먼저 검색, 없으면 본문+태그 검색
+    const titleMatches = list.filter(n=>n.title.toLowerCase().includes(q));
+    const bodyMatches  = list.filter(n=>!n.title.toLowerCase().includes(q) &&
+      (n.body.toLowerCase().includes(q)||(n.tags||[]).some(t=>t.toLowerCase().includes(q))));
+    list = [...titleMatches, ...bodyMatches];
+  }
   if(currentFilter==='recent') list=list.filter(n=>n.updated>Date.now()-7*86400000);
   else if(currentFilter==='starred') list=list.filter(n=>n.starred);
   else if(currentFilter==='cat') list=list.filter(n=>n.cat===currentCat);
@@ -950,10 +956,12 @@ document.getElementById('tag-input').addEventListener('keydown',e=>{
   if(e.key==='Enter'||e.key===','){e.preventDefault();const val=e.target.value.trim().replace(/^#/,'');if(!val||!currentNote)return;currentNote.tags=currentNote.tags||[];if(!currentNote.tags.includes(val)){currentNote.tags.push(val);renderTags(currentNote.tags);}e.target.value='';}
 });
 
+let searchDebounceTimer = null;
 document.getElementById('search-input').addEventListener('input',e=>{
   searchQuery=e.target.value;
   if(searchQuery){currentFilter='all';hiddenVisible=false;document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.querySelector('[data-filter="all"]').classList.add('active');}
-  renderAll();
+  clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = setTimeout(() => renderAll(), 300);
 });
 
 document.querySelectorAll('.nav-item:not(#nav-hidden)').forEach(item=>{
