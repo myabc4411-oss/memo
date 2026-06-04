@@ -180,6 +180,23 @@
     .btn-danger-sm { background: #fde8ec; color: var(--danger); border: none; border-radius: 7px; padding: 7px 14px; font-size: 13px; cursor: pointer; margin-right: auto; }
     .btn-confirm { background: var(--accent); color: #fff; border: none; border-radius: 7px; padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer; }
 
+    /* 체크리스트 */
+    .cm-line-checked { text-decoration: line-through; color: var(--muted) !important; }
+    .checkbox-render { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+
+    /* 템플릿 목록 */
+    .template-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+      cursor: pointer; transition: background .15s;
+    }
+    .template-item:hover { background: #f0f0eb; }
+    .template-item-name { font-size: 13.5px; font-weight: 600; color: var(--text); }
+    .template-item-preview { font-size: 11.5px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+    .template-item-del { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 14px; padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
+    .template-item-del:hover { color: var(--danger); background: #fde8ec; }
+    .template-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 20px; }
+
     mark { background: #fef08a; border-radius: 2px; }
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(10px); background: #313244; color: #cdd6f4; padding: 9px 18px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none; z-index: 200; }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -375,6 +392,9 @@
         <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;">
           <input type="checkbox" id="note-starred" style="accent-color:var(--accent);"> ⭐
         </label>
+        <button class="btn-icon-tool" id="btn-checklist" title="체크리스트 항목 추가">☑️</button>
+        <button class="btn-icon-tool" id="btn-template" title="템플릿">📋</button>
+        <button class="btn-icon-tool" id="btn-save-template" title="현재 메모를 템플릿으로 저장">💾</button>
         <button class="btn-icon-tool" id="btn-in-note-search" title="메모 내 검색">🔎</button>
         <button class="btn-icon-tool" id="btn-lock-note" title="비밀번호 잠금">🔓</button>
         <button class="btn-icon-tool" id="btn-hide-note" title="메모 숨기기">👁</button>
@@ -407,6 +427,32 @@
 <div id="scroll-btns">
   <button class="scroll-jump-btn" id="btn-scroll-top">↑</button>
   <button class="scroll-jump-btn" id="btn-scroll-bot">↓</button>
+</div>
+
+<!-- 템플릿 모달 -->
+<div class="modal-overlay" id="template-modal">
+  <div class="modal" style="width:400px;max-width:calc(100%-32px);">
+    <h3>📋 템플릿</h3>
+    <p class="modal-sub">템플릿을 선택하면 현재 메모에 내용이 추가됩니다</p>
+    <div id="template-list" style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto;margin-bottom:14px;"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="template-cancel">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 템플릿 저장 모달 -->
+<div class="modal-overlay" id="save-template-modal">
+  <div class="modal">
+    <h3>💾 템플릿으로 저장</h3>
+    <p class="modal-sub">현재 메모 내용을 템플릿으로 저장합니다</p>
+    <input type="text" id="template-name-input" placeholder="템플릿 이름" maxlength="30" />
+    <div class="modal-err" id="template-err"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="save-template-cancel">취소</button>
+      <button class="btn-confirm" id="save-template-confirm">저장</button>
+    </div>
+  </div>
 </div>
 
 <!-- 모달들 -->
@@ -1084,7 +1130,136 @@ document.getElementById('cat-modal').addEventListener('click',e=>{if(e.target===
 
 renderAll();
 
-  // ── 모바일 커스텀 스크롤바 ────────────────────────────────────
+// ── 체크리스트 ───────────────────────────────────────────────
+// [ ] 항목 삽입
+document.getElementById('btn-checklist').addEventListener('click', () => {
+  if (!cmEditor) return;
+  const cursor = cmEditor.getCursor();
+  const lineContent = cmEditor.getLine(cursor.line);
+  // 줄 맨 앞에 [ ] 삽입, 이미 있으면 토글
+  if (lineContent.trimStart().startsWith('[ ] ')) {
+    const newLine = lineContent.replace('[ ] ', '[x] ');
+    cmEditor.replaceRange(newLine, {line: cursor.line, ch: 0}, {line: cursor.line, ch: lineContent.length});
+  } else if (lineContent.trimStart().startsWith('[x] ')) {
+    const newLine = lineContent.replace('[x] ', '[ ] ');
+    cmEditor.replaceRange(newLine, {line: cursor.line, ch: 0}, {line: cursor.line, ch: lineContent.length});
+  } else {
+    // 새 체크항목 삽입
+    cmEditor.replaceRange('\n[ ] ', {line: cursor.line, ch: lineContent.length});
+    cmEditor.setCursor({line: cursor.line + 1, ch: 4});
+  }
+  cmEditor.focus();
+});
+
+// CodeMirror에서 [ ] 클릭 시 체크 토글 (에디터 클릭 이벤트)
+document.getElementById('cm-editor-wrap').addEventListener('click', e => {
+  if (!cmEditor) return;
+  const coords = cmEditor.coordsChar({left: e.clientX, top: e.clientY});
+  const line = cmEditor.getLine(coords.line);
+  if (!line) return;
+  const trimmed = line.trimStart();
+  if (trimmed.startsWith('[ ] ') || trimmed.startsWith('[x] ')) {
+    const indent = line.length - trimmed.length;
+    // 클릭 위치가 체크박스 영역인지 확인 (줄 앞 10자 이내)
+    if (coords.ch <= indent + 4) {
+      const isChecked = trimmed.startsWith('[x] ');
+      const newLine = isChecked
+        ? line.replace('[x] ', '[ ] ')
+        : line.replace('[ ] ', '[x] ');
+      cmEditor.replaceRange(newLine, {line: coords.line, ch: 0}, {line: coords.line, ch: line.length});
+    }
+  }
+});
+
+// ── 템플릿 ───────────────────────────────────────────────────
+let templates = JSON.parse(localStorage.getItem('templates') || '[]');
+
+function saveTemplates() {
+  localStorage.setItem('templates', JSON.stringify(templates));
+}
+
+function renderTemplateList() {
+  const el = document.getElementById('template-list');
+  if (!templates.length) {
+    el.innerHTML = '<div class="template-empty">저장된 템플릿이 없어요.<br>메모를 작성 후 💾 버튼으로 저장하세요.</div>';
+    return;
+  }
+  el.innerHTML = '';
+  templates.forEach((t, i) => {
+    const div = document.createElement('div');
+    div.className = 'template-item';
+    div.innerHTML = `
+      <div style="flex:1;min-width:0;">
+        <div class="template-item-name">${escHtml(t.name)}</div>
+        <div class="template-item-preview">${escHtml(t.body.slice(0, 60)).replace(/\n/g, ' ')}</div>
+      </div>
+      <button class="template-item-del" data-idx="${i}" title="삭제">🗑</button>`;
+    div.addEventListener('click', e => {
+      if (e.target.closest('.template-item-del')) return;
+      // 현재 메모에 템플릿 내용 추가
+      if (!cmEditor) return;
+      const current = cmEditor.getValue();
+      const insert = current ? current + '\n\n' + t.body : t.body;
+      cmEditor.setValue(insert);
+      cmEditor.scrollTo(0, 0);
+      document.getElementById('template-modal').classList.remove('open');
+      showToast('📋 템플릿이 적용됐어요!');
+    });
+    div.querySelector('.template-item-del').addEventListener('click', e => {
+      e.stopPropagation();
+      if (confirm(`"${t.name}" 템플릿을 삭제할까요?`)) {
+        templates.splice(i, 1);
+        saveTemplates();
+        renderTemplateList();
+      }
+    });
+    el.appendChild(div);
+  });
+}
+
+// 템플릿 불러오기 버튼
+document.getElementById('btn-template').addEventListener('click', () => {
+  renderTemplateList();
+  document.getElementById('template-modal').classList.add('open');
+});
+document.getElementById('template-cancel').addEventListener('click', () => {
+  document.getElementById('template-modal').classList.remove('open');
+});
+document.getElementById('template-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
+});
+
+// 템플릿 저장 버튼
+document.getElementById('btn-save-template').addEventListener('click', () => {
+  if (!currentNote) { showToast('메모를 먼저 열어주세요'); return; }
+  const defaultName = document.getElementById('note-title').value.trim() || '새 템플릿';
+  document.getElementById('template-name-input').value = defaultName;
+  document.getElementById('template-err').textContent = '';
+  document.getElementById('save-template-modal').classList.add('open');
+  document.getElementById('template-name-input').focus();
+  document.getElementById('template-name-input').select();
+});
+document.getElementById('save-template-cancel').addEventListener('click', () => {
+  document.getElementById('save-template-modal').classList.remove('open');
+});
+document.getElementById('save-template-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
+});
+document.getElementById('save-template-confirm').addEventListener('click', () => {
+  const name = document.getElementById('template-name-input').value.trim();
+  if (!name) { document.getElementById('template-err').textContent = '이름을 입력하세요'; return; }
+  const body = getCMText();
+  if (!body) { document.getElementById('template-err').textContent = '내용이 없어요'; return; }
+  templates.unshift({ id: uid(), name, body });
+  saveTemplates();
+  document.getElementById('save-template-modal').classList.remove('open');
+  showToast('💾 템플릿으로 저장됐어요!');
+});
+document.getElementById('template-name-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('save-template-confirm').click();
+});
+
+
 (function() {
   if (!isMobile()) return;
 
