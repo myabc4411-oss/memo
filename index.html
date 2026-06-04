@@ -1131,27 +1131,26 @@ document.getElementById('cat-modal').addEventListener('click',e=>{if(e.target===
 renderAll();
 
 // ── 체크리스트 ───────────────────────────────────────────────
-// [ ] 항목 삽입
+// 버튼: 현재 커서 위치에 [ ] 삽입 (이미 체크리스트 줄이면 토글)
 document.getElementById('btn-checklist').addEventListener('click', () => {
   if (!cmEditor) return;
   const cursor = cmEditor.getCursor();
   const lineContent = cmEditor.getLine(cursor.line);
-  // 줄 맨 앞에 [ ] 삽입, 이미 있으면 토글
-  if (lineContent.trimStart().startsWith('[ ] ')) {
-    const newLine = lineContent.replace('[ ] ', '[x] ');
-    cmEditor.replaceRange(newLine, {line: cursor.line, ch: 0}, {line: cursor.line, ch: lineContent.length});
-  } else if (lineContent.trimStart().startsWith('[x] ')) {
-    const newLine = lineContent.replace('[x] ', '[ ] ');
+  const trimmed = lineContent.trimStart();
+  if (trimmed.startsWith('[ ] ') || trimmed.startsWith('[x] ')) {
+    const isChecked = trimmed.startsWith('[x] ');
+    const newLine = isChecked ? lineContent.replace('[x] ', '[ ] ') : lineContent.replace('[ ] ', '[x] ');
     cmEditor.replaceRange(newLine, {line: cursor.line, ch: 0}, {line: cursor.line, ch: lineContent.length});
   } else {
-    // 새 체크항목 삽입
-    cmEditor.replaceRange('\n[ ] ', {line: cursor.line, ch: lineContent.length});
-    cmEditor.setCursor({line: cursor.line + 1, ch: 4});
+    // 현재 커서 위치에 [ ] 삽입
+    cmEditor.replaceRange('[ ] ', cursor);
+    cmEditor.setCursor({line: cursor.line, ch: cursor.ch + 4});
   }
   cmEditor.focus();
 });
 
-// CodeMirror에서 [ ] 클릭 시 체크 토글 (에디터 클릭 이벤트)
+// "[ ] " 직접 타이핑 시 자동 인식 (이미 올바른 형식이라 별도 변환 불필요)
+// [ ] 클릭 시 체크 토글
 document.getElementById('cm-editor-wrap').addEventListener('click', e => {
   if (!cmEditor) return;
   const coords = cmEditor.coordsChar({left: e.clientX, top: e.clientY});
@@ -1160,16 +1159,34 @@ document.getElementById('cm-editor-wrap').addEventListener('click', e => {
   const trimmed = line.trimStart();
   if (trimmed.startsWith('[ ] ') || trimmed.startsWith('[x] ')) {
     const indent = line.length - trimmed.length;
-    // 클릭 위치가 체크박스 영역인지 확인 (줄 앞 10자 이내)
     if (coords.ch <= indent + 4) {
       const isChecked = trimmed.startsWith('[x] ');
-      const newLine = isChecked
-        ? line.replace('[x] ', '[ ] ')
-        : line.replace('[ ] ', '[x] ');
+      const newLine = isChecked ? line.replace('[x] ', '[ ] ') : line.replace('[ ] ', '[x] ');
       cmEditor.replaceRange(newLine, {line: coords.line, ch: 0}, {line: coords.line, ch: line.length});
     }
   }
 });
+
+// "[ ]" 타이핑 후 스페이스 누르면 자동으로 체크리스트 완성
+// (예: [ ] 입력하면 [ ] 로 그냥 두되, 클릭하면 토글되게)
+// CM change 이벤트: 줄에 [ ] 또는 [x] 만 있고 그 다음 스페이스 없으면 스페이스 자동 추가
+function attachChecklistTyping() {
+  if (!cmEditor) return;
+  cmEditor.on('change', (editor, change) => {
+    if (change.origin === 'setValue' || change.origin === '+checklist') return;
+    const cursor = editor.getCursor();
+    const line = editor.getLine(cursor.line);
+    if (!line) return;
+    // 줄이 정확히 "[ ]" 또는 "[x]" 로만 되어있으면 스페이스 자동 추가
+    if (line === '[ ]' || line === '[x]') {
+      editor.replaceRange(' ', {line: cursor.line, ch: line.length}, {line: cursor.line, ch: line.length}, '+checklist');
+      editor.setCursor({line: cursor.line, ch: line.length + 1});
+    }
+  });
+}
+attachChecklistTyping();
+
+
 
 // ── 템플릿 ───────────────────────────────────────────────────
 let templates = JSON.parse(localStorage.getItem('templates') || '[]');
