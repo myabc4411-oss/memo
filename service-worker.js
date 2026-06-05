@@ -1,4 +1,4 @@
-const CACHE_NAME = 'memo-v5';
+const CACHE_NAME = 'memo-v6';
 
 self.addEventListener('install', event => {
   self.skipWaiting();
@@ -12,13 +12,11 @@ self.addEventListener('activate', event => {
   );
 });
 
-// 항상 네트워크 우선
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   if (event.request.url.includes('googleapis.com') ||
       event.request.url.includes('accounts.google.com') ||
-      event.request.url.includes('gstatic.com') ||
-      event.request.url.includes('firebaseapp.com')) return;
+      event.request.url.includes('gstatic.com')) return;
 
   event.respondWith(
     fetch(event.request).catch(() => caches.match(event.request))
