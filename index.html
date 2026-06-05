@@ -523,6 +523,9 @@ let pendingSave = false;
 let fbLoaded = false;
 
 // ── Firebase 저장/불러오기 ──────────────────────────────────
+// 메모를 청크로 나눠 저장 (Firebase 1MB 문서 한도 대응)
+const CHUNK_SIZE = 50; // 메모 50개씩 나눠서 저장
+
 async function saveToFirebase() {
   if (!fbUser) return;
   if (isSaving) { pendingSave = true; return; }
@@ -530,12 +533,20 @@ async function saveToFirebase() {
   setSaveStatus('saving', '☁️ 저장 중...');
   document.getElementById('btn-save').disabled = true;
   try {
-    // Firebase는 중첩 배열을 못 다루므로 JSON 문자열로 저장
-    const payload = {
-      data: JSON.stringify({ notes, categories, masterHash: masterHash || null }),
+    const uid = fbUser.uid;
+    // 메타 정보 저장 (카테고리, masterHash, 청크 수)
+    const chunkCount = Math.ceil(notes.length / CHUNK_SIZE);
+    await setDoc(doc(db, 'memos', uid), {
+      meta: JSON.stringify({ categories, masterHash: masterHash || null, chunkCount, total: notes.length }),
       updatedAt: Date.now()
-    };
-    await setDoc(doc(db, 'memos', fbUser.uid), payload);
+    });
+    // 메모를 청크로 나눠 저장
+    for (let i = 0; i < chunkCount; i++) {
+      const chunk = notes.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+      await setDoc(doc(db, 'memos', uid, 'chunks', String(i)), {
+        notes: JSON.stringify(chunk)
+      });
+    }
     setSaveStatus('saved', '✓ 저장됨');
     setTimeout(() => setSaveStatus('idle', ''), 3000);
   } catch(e) {
@@ -552,20 +563,31 @@ async function loadFromFirebase() {
   if (!fbUser) return;
   try {
     setSaveStatus('saving', '☁️ 불러오는 중...');
-    const snap = await getDoc(doc(db, 'memos', fbUser.uid));
+    const uid = fbUser.uid;
+    const snap = await getDoc(doc(db, 'memos', uid));
     if (snap.exists()) {
       const raw = snap.data();
-      // JSON 문자열로 저장된 경우
-      if (raw.data) {
+      // 새 청크 방식
+      if (raw.meta) {
+        const meta = JSON.parse(raw.meta);
+        if (Array.isArray(meta.categories) && meta.categories.length) categories = meta.categories;
+        if (meta.masterHash) { masterHash = meta.masterHash; localStorage.setItem('masterHash', masterHash); }
+        // 청크 불러오기
+        const allNotes = [];
+        for (let i = 0; i < meta.chunkCount; i++) {
+          const cSnap = await getDoc(doc(db, 'memos', uid, 'chunks', String(i)));
+          if (cSnap.exists()) {
+            const chunk = JSON.parse(cSnap.data().notes);
+            allNotes.push(...chunk);
+          }
+        }
+        notes = allNotes;
+      } else if (raw.data) {
+        // 구버전 JSON 문자열 방식
         const data = JSON.parse(raw.data);
         if (Array.isArray(data.notes)) notes = data.notes;
         if (Array.isArray(data.categories) && data.categories.length) categories = data.categories;
         if (data.masterHash) { masterHash = data.masterHash; localStorage.setItem('masterHash', masterHash); }
-      } else {
-        // 구버전 호환
-        if (Array.isArray(raw.notes)) notes = raw.notes;
-        if (Array.isArray(raw.categories) && raw.categories.length) categories = raw.categories;
-        if (raw.masterHash) { masterHash = raw.masterHash; localStorage.setItem('masterHash', masterHash); }
       }
       saveLocal();
     }
