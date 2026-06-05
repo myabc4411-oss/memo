@@ -350,9 +350,9 @@
   <div class="sidebar-footer">
     <button class="btn-drive" id="btn-drive">
       <span id="drive-icon">☁️</span>
-      <span id="drive-label">구글 드라이브 연결</span>
+      <span id="drive-label">구글 로그인</span>
     </button>
-    <div class="drive-status" id="drive-status">연결하면 자동 저장·동기화</div>
+    <div class="drive-status" id="drive-status">로그인하면 기기간 동기화</div>
   </div>
 </aside>
 
@@ -497,6 +497,126 @@
 
 <div class="toast" id="toast"></div>
 <script src="https://accounts.google.com/gsi/client" async></script>
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDxEPFHEF_Kb7xoZWe23syM_8Igrc4u-GQ",
+  authDomain: "my-memo-f7bfd.firebaseapp.com",
+  projectId: "my-memo-f7bfd",
+  storageBucket: "my-memo-f7bfd.firebasestorage.app",
+  messagingSenderId: "173366391454",
+  appId: "1:173366391454:web:8eea82f5e594d65a60c18f"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
+let fbUser = null;
+let isSaving = false;
+let pendingSave = false;
+let fbLoaded = false;
+
+// ── Firebase 저장/불러오기 ──────────────────────────────────
+async function saveToFirebase() {
+  if (!fbUser) return;
+  if (isSaving) { pendingSave = true; return; }
+  isSaving = true;
+  setSaveStatus('saving', '☁️ 저장 중...');
+  document.getElementById('btn-save').disabled = true;
+  try {
+    await setDoc(doc(db, 'memos', fbUser.uid), {
+      notes, categories, masterHash: masterHash || null,
+      updatedAt: Date.now()
+    });
+    setSaveStatus('saved', '✓ 저장됨');
+    setTimeout(() => setSaveStatus('idle', ''), 3000);
+  } catch(e) {
+    setSaveStatus('error', '⚠️ 저장 실패');
+    console.error(e);
+  } finally {
+    isSaving = false;
+    document.getElementById('btn-save').disabled = false;
+    if (pendingSave) { pendingSave = false; saveToFirebase(); }
+  }
+}
+
+async function loadFromFirebase() {
+  if (!fbUser) return;
+  try {
+    setSaveStatus('saving', '☁️ 불러오는 중...');
+    const snap = await getDoc(doc(db, 'memos', fbUser.uid));
+    if (snap.exists()) {
+      const data = snap.data();
+      if (Array.isArray(data.notes)) notes = data.notes;
+      if (Array.isArray(data.categories) && data.categories.length) categories = data.categories;
+      if (data.masterHash) { masterHash = data.masterHash; localStorage.setItem('masterHash', masterHash); }
+      saveLocal();
+    }
+    fbLoaded = true;
+    setSaveStatus('idle', '');
+    updateFirebaseUI(true);
+    renderAll();
+    showToast('☁️ 동기화 완료!');
+  } catch(e) {
+    setSaveStatus('error', '⚠️ 불러오기 실패');
+    fbLoaded = true;
+    renderAll();
+    console.error(e);
+  }
+}
+
+function updateFirebaseUI(connected) {
+  const btn = document.getElementById('btn-drive');
+  btn.classList.toggle('connected', connected);
+  document.getElementById('drive-icon').textContent = connected ? '✅' : '☁️';
+  document.getElementById('drive-label').textContent = connected
+    ? (fbUser ? fbUser.displayName || '연결됨' : '연결됨')
+    : '구글 로그인';
+  document.getElementById('drive-status').textContent = connected
+    ? '저장 시 자동으로 동기화'
+    : '로그인하면 기기간 동기화';
+}
+
+// ── 로그인/로그아웃 ──────────────────────────────────────────
+onAuthStateChanged(auth, async (user) => {
+  fbUser = user;
+  if (user) {
+    await loadFromFirebase();
+    updateFirebaseUI(true);
+  } else {
+    fbLoaded = true;
+    updateFirebaseUI(false);
+    renderAll();
+  }
+});
+
+document.getElementById('btn-drive').addEventListener('click', async () => {
+  if (fbUser) {
+    if (confirm('로그아웃 할까요?')) {
+      await signOut(auth);
+      fbUser = null;
+      updateFirebaseUI(false);
+      showToast('로그아웃 됐어요');
+    }
+  } else {
+    try {
+      await signInWithPopup(auth, provider);
+    } catch(e) {
+      showToast('로그인 실패: ' + e.message);
+    }
+  }
+});
+
+// ── 전역 save 함수 교체 ──────────────────────────────────────
+window._firebaseSave = saveToFirebase;
+window._fbLoaded = () => fbLoaded;
+</script>
 
 <script>
 // ── 모바일 높이 고정 ─────────────────────────────────────────
@@ -654,12 +774,8 @@ document.getElementById('in-note-search-input').addEventListener('keydown', e =>
   if (e.key === 'Escape') closeInNoteSearch();
 });
 
-// ── Google Drive ─────────────────────────────────────────────
-const CLIENT_ID = '241891084572-gjtpciga7htfd3boa894uube0o1kp4mo.apps.googleusercontent.com';
-const SCOPE = 'https://www.googleapis.com/auth/drive.file';
-let accessToken = null, driveFileId = localStorage.getItem('driveFileId') || null;
-let tokenClient = null, driveConnected = false, isSavingToDrive = false;
-let pendingDriveSave = false, lastSavedJson = null, saveDebounceTimer = null;
+// ── Google Drive 제거, Firebase로 교체 ───────────────────────
+let saveDebounceTimer = null;
 
 // ── 앱 상태 ───────────────────────────────────────────────────
 const CAT_COLORS = ['#89b4fa','#cba6f7','#f38ba8','#a6e3a1','#f9e2af','#94e2d5','#fab387','#eba0ac'];
@@ -714,88 +830,13 @@ function saveLocal() {
   if (masterHash) localStorage.setItem('masterHash', masterHash);
 }
 
-async function saveToDriveQueued() {
-  if (!driveConnected || !accessToken || !driveFileId) return;
-  const currentJson = JSON.stringify({notes,categories,masterHash});
-  if (currentJson === lastSavedJson) return;
-  if (isSavingToDrive) { pendingDriveSave = true; return; }
-  isSavingToDrive = true; setSaveStatus('saving','☁️ 저장 중...');
-  document.getElementById('btn-save').disabled = true;
-  try {
-    const resp = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,
-      {method:'PATCH',headers:{Authorization:`Bearer ${accessToken}`,'Content-Type':'application/json'},body:currentJson});
-    if (resp.status===401) { accessToken=null; localStorage.removeItem('gToken'); updateDriveUI(false); showToast('세션 만료. 다시 연결해주세요.'); setSaveStatus('error','⚠️ 세션 만료'); }
-    else if (!resp.ok) { setSaveStatus('error','⚠️ 저장 실패'); }
-    else { lastSavedJson=currentJson; setSaveStatus('saved','✓ 저장됨'); setTimeout(()=>setSaveStatus('idle',''),3000); }
-  } catch(e) { setSaveStatus('error','⚠️ 네트워크 오류'); }
-  finally {
-    isSavingToDrive=false; document.getElementById('btn-save').disabled=false;
-    if (pendingDriveSave) { pendingDriveSave=false; saveToDriveQueued(); }
-  }
-}
-async function save() { saveLocal(); saveToDriveQueued(); }
-
-window.onload = () => {
-  initCM();
-  const saved = localStorage.getItem('gToken');
-  if (saved) { accessToken=saved; loadFromDrive().catch(()=>{ accessToken=null; localStorage.removeItem('gToken'); updateDriveUI(false); }); }
-};
-
-function initTokenClient() {
-  if (tokenClient) return;
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID, scope: SCOPE,
-    callback: async (resp) => {
-      if (resp.error) { showToast('로그인 실패: '+resp.error); return; }
-      accessToken=resp.access_token; localStorage.setItem('gToken',accessToken); await loadFromDrive();
-    },
-  });
+async function save() {
+  saveLocal();
+  if (window._firebaseSave) window._firebaseSave();
 }
 
-document.getElementById('btn-drive').addEventListener('click', () => {
-  if (driveConnected) {
-    if (confirm('구글 드라이브 연결을 해제할까요?')) {
-      if (accessToken) google.accounts.oauth2.revoke(accessToken,()=>{});
-      accessToken=null; driveConnected=false; localStorage.removeItem('gToken'); updateDriveUI(false); showToast('드라이브 연결이 해제되었습니다');
-    }
-  } else { initTokenClient(); tokenClient.requestAccessToken({prompt:''}); }
-});
+window.onload = () => { initCM(); };
 
-function updateDriveUI(connected) {
-  driveConnected=connected;
-  document.getElementById('btn-drive').classList.toggle('connected',connected);
-  document.getElementById('drive-icon').textContent = connected?'✅':'☁️';
-  document.getElementById('drive-label').textContent = connected?'드라이브 연결됨':'구글 드라이브 연결';
-  document.getElementById('drive-status').textContent = connected?'저장 시 자동으로 드라이브에 동기화':'연결하면 자동 저장·동기화';
-}
-
-async function findOrCreateFile() {
-  if (driveFileId) return;
-  const resp = await fetch(`https://www.googleapis.com/drive/v3/files?q=name%3D'memo-notes.json'+and+trashed%3Dfalse&fields=files(id)`,{headers:{Authorization:`Bearer ${accessToken}`}});
-  if (!resp.ok) throw new Error('Drive 접근 실패');
-  const data = await resp.json();
-  if (data.files?.length) { driveFileId=data.files[0].id; }
-  else {
-    const form = new FormData();
-    form.append('metadata',new Blob([JSON.stringify({name:'memo-notes.json',mimeType:'application/json'})],{type:'application/json'}));
-    form.append('file',new Blob([JSON.stringify({notes:[],categories:[],masterHash:null})],{type:'application/json'}));
-    const cr = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{Authorization:`Bearer ${accessToken}`},body:form});
-    driveFileId=(await cr.json()).id;
-  }
-  localStorage.setItem('driveFileId',driveFileId);
-}
-
-async function loadFromDrive() {
-  await findOrCreateFile();
-  const resp = await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`,{headers:{Authorization:`Bearer ${accessToken}`}});
-  if (!resp.ok) throw new Error('불러오기 실패');
-  const data = await resp.json();
-  if (Array.isArray(data.notes)) notes=data.notes;
-  if (Array.isArray(data.categories)&&data.categories.length) categories=data.categories;
-  if (data.masterHash) { masterHash=data.masterHash; localStorage.setItem('masterHash',masterHash); }
-  lastSavedJson=JSON.stringify({notes,categories,masterHash});
-  saveLocal(); updateDriveUI(true); renderAll(); showToast('☁️ 드라이브에서 불러왔습니다');
-}
 
 // ── 렌더링 ───────────────────────────────────────────────────
 function renderCategories() {
