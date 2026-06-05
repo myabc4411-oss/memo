@@ -530,10 +530,12 @@ async function saveToFirebase() {
   setSaveStatus('saving', '☁️ 저장 중...');
   document.getElementById('btn-save').disabled = true;
   try {
-    await setDoc(doc(db, 'memos', fbUser.uid), {
-      notes, categories, masterHash: masterHash || null,
+    // Firebase는 중첩 배열을 못 다루므로 JSON 문자열로 저장
+    const payload = {
+      data: JSON.stringify({ notes, categories, masterHash: masterHash || null }),
       updatedAt: Date.now()
-    });
+    };
+    await setDoc(doc(db, 'memos', fbUser.uid), payload);
     setSaveStatus('saved', '✓ 저장됨');
     setTimeout(() => setSaveStatus('idle', ''), 3000);
   } catch(e) {
@@ -552,10 +554,19 @@ async function loadFromFirebase() {
     setSaveStatus('saving', '☁️ 불러오는 중...');
     const snap = await getDoc(doc(db, 'memos', fbUser.uid));
     if (snap.exists()) {
-      const data = snap.data();
-      if (Array.isArray(data.notes)) notes = data.notes;
-      if (Array.isArray(data.categories) && data.categories.length) categories = data.categories;
-      if (data.masterHash) { masterHash = data.masterHash; localStorage.setItem('masterHash', masterHash); }
+      const raw = snap.data();
+      // JSON 문자열로 저장된 경우
+      if (raw.data) {
+        const data = JSON.parse(raw.data);
+        if (Array.isArray(data.notes)) notes = data.notes;
+        if (Array.isArray(data.categories) && data.categories.length) categories = data.categories;
+        if (data.masterHash) { masterHash = data.masterHash; localStorage.setItem('masterHash', masterHash); }
+      } else {
+        // 구버전 호환
+        if (Array.isArray(raw.notes)) notes = raw.notes;
+        if (Array.isArray(raw.categories) && raw.categories.length) categories = raw.categories;
+        if (raw.masterHash) { masterHash = raw.masterHash; localStorage.setItem('masterHash', masterHash); }
+      }
       saveLocal();
     }
     fbLoaded = true;
