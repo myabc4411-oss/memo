@@ -799,7 +799,7 @@ function showLoadingScreen(loading, needLogin = false) {
 
 document.getElementById('loading-login-btn').addEventListener('click', () => {
   initTokenClient();
-  tokenClient.requestAccessToken({ prompt: '' });
+  tokenClient.requestAccessToken({ prompt: 'select_account' });
 });
 
 function initTokenClient() {
@@ -807,11 +807,21 @@ function initTokenClient() {
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID, scope: SCOPE,
     callback: async (resp) => {
-      if (resp.error) { showToast('로그인 실패: '+resp.error); return; }
+      if (resp.error) {
+        // 로그인 실패해도 로딩화면 유지 (로컬로 이동 안 함)
+        showToast('로그인 실패. 다시 시도해주세요.');
+        showLoadingScreen(false, true);
+        return;
+      }
       accessToken=resp.access_token; localStorage.setItem('gToken',accessToken);
       showLoadingScreen(true);
       await loadFromDrive();
     },
+    error_callback: (err) => {
+      // 팝업 차단 등 에러 시에도 로그인 화면 유지
+      showLoadingScreen(false, true);
+      showToast('로그인 창이 차단됐어요. 팝업을 허용해주세요.');
+    }
   });
 }
 
@@ -869,11 +879,11 @@ async function loadFromDrive() {
     renderAll();
     showToast('☁️ 드라이브에서 불러왔습니다');
   } catch(e) {
-    driveLoadDone = true;
-    showLoadingScreen(false);
-    updateDriveUI(false);
-    renderAll();
-    showToast('⚠️ 드라이브 연결 실패');
+    // 토큰 만료 등 실패 시 로그인 화면으로
+    accessToken = null; localStorage.removeItem('gToken');
+    driveFileId = null; localStorage.removeItem('driveFileId');
+    showLoadingScreen(false, true);
+    showToast('⚠️ 드라이브 연결 실패. 다시 로그인해주세요.');
   }
 }
 
