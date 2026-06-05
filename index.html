@@ -753,7 +753,7 @@ async function saveToDriveQueued() {
   try {
     const resp = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,
       {method:'PATCH',headers:{Authorization:`Bearer ${accessToken}`,'Content-Type':'application/json'},body:currentJson});
-    if (resp.status===401) { accessToken=null; localStorage.removeItem('gToken'); updateDriveUI(false); showToast('세션 만료. 다시 연결해주세요.'); setSaveStatus('error','⚠️ 세션 만료'); }
+    if (resp.status===401) { handleTokenExpiry(); }
     else if (!resp.ok) { setSaveStatus('error','⚠️ 저장 실패'); }
     else { lastSavedJson=currentJson; setSaveStatus('saved','✓ 저장됨'); setTimeout(()=>setSaveStatus('idle',''),3000); }
   } catch(e) { setSaveStatus('error','⚠️ 네트워크 오류'); }
@@ -778,14 +778,24 @@ window.onload = () => {
     loadFromDrive().catch(() => {
       accessToken = null; localStorage.removeItem('gToken');
       updateDriveUI(false);
-      driveLoadDone = true;
-      showLoadingScreen(false);
+      driveLoadDone = false;
+      showLoadingScreen(false, true);
     });
   } else {
-    // 로그인 안 된 상태면 로그인 화면 표시
     showLoadingScreen(false, true);
   }
 };
+
+// 401 세션 만료 감지 → 자동 로그인 화면 이동
+function handleTokenExpiry() {
+  accessToken = null;
+  localStorage.removeItem('gToken');
+  driveConnected = false;
+  driveLoadDone = false;
+  updateDriveUI(false);
+  showLoadingScreen(false, true);
+  showToast('세션이 만료됐어요. 다시 로그인해주세요.');
+}
 
 function showLoadingScreen(loading, needLogin = false) {
   const el = document.getElementById('loading-screen');
