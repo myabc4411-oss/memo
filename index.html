@@ -2,10 +2,6 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="manifest" href="manifest.json">
   <title>내 메모장</title>
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
@@ -19,7 +15,6 @@
       --accent: #89b4fa; --danger: #f38ba8; --success: #a6e3a1;
       --card-bg: #ffffff; --border: #e0e0d8; --text: #1e1e2e; --muted: #6c7086;
       --editor-bg: #ffffff; --shadow: 0 2px 12px rgba(0,0,0,0.08); --radius: 10px;
-      --app-h: 100vh;
     }
 
     html, body {
@@ -63,9 +58,7 @@
     .btn-new-cat { display: flex; align-items: center; gap: 8px; width: 100%; padding: 7px 10px; background: none; border: none; color: var(--sidebar-muted); font-size: 12.5px; cursor: pointer; border-radius: 7px; transition: background .15s, color .15s; }
     .btn-new-cat:hover { background: var(--sidebar-hover); color: var(--sidebar-text); }
     .sidebar-footer { padding: 12px 8px; border-top: 1px solid #313244; display: flex; flex-direction: column; gap: 8px; }
-    .btn-drive { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; padding: 9px 10px; background: #313244; border: 1px solid #45475a; border-radius: 8px; color: var(--sidebar-text); font-size: 12.5px; cursor: pointer; transition: background .15s; font-family: inherit; }
-    .btn-drive:hover { background: #45475a; }
-    .btn-drive.connected { border-color: #a6e3a1; color: #a6e3a1; }
+    .btn-drive { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; padding: 9px 10px; background: #313244; border: 1px solid #a6e3a1; border-radius: 8px; color: #a6e3a1; font-size: 12.5px; font-family: inherit; }
     .drive-status { font-size: 10.5px; color: var(--sidebar-muted); text-align: center; }
 
     /* 리스트 패널 */
@@ -201,7 +194,7 @@
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(10px); background: #313244; color: #cdd6f4; padding: 9px 18px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none; z-index: 200; }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    /* ── 맨위/맨아래 버튼 (항상 선언, 모바일에서 표시) ── */
+    /* 맨위/맨아래 버튼 */
     #scroll-btns {
       position: fixed;
       right: 16px;
@@ -234,11 +227,8 @@
     }
     .scroll-jump-btn:active { opacity: 0.7; }
 
-    /* ══════════════════════════════════════
-       모바일 레이아웃
-    ══════════════════════════════════════ */
+    /* 모바일 레이아웃 */
     @media (max-width: 768px) {
-      /* 앱 전체를 실제 화면 높이로 고정 */
       html { height: -webkit-fill-available; }
       body {
         height: 100vh;
@@ -268,7 +258,6 @@
       body.show-editor #list-panel   { transform: translateX(-100%); }
       body.show-editor #editor-panel { transform: translateX(0); }
 
-      /* 모바일 뒤로가기 버튼 */
       .mobile-back-btn {
         display: flex; align-items: center; gap: 6px;
         background: none; border: none; cursor: pointer;
@@ -276,7 +265,6 @@
         font-size: 14px; color: var(--muted);
       }
 
-      /* 사이드바 헤더 */
       .sidebar-header { display: flex; flex-direction: column; gap: 10px; }
       .app-title-row { display: flex; align-items: center; justify-content: space-between; }
       .btn-sidebar-to-list {
@@ -289,7 +277,6 @@
       .editor-meta { gap: 6px; }
       .modal { width: calc(100% - 40px); }
 
-      /* 모바일 스크롤바 — 터치 가능하게 크게 */
       .CodeMirror-vscrollbar::-webkit-scrollbar { width: 20px !important; }
       .CodeMirror-vscrollbar::-webkit-scrollbar-track {
         background: rgba(0,0,0,0.06);
@@ -348,11 +335,12 @@
     <button class="btn-new-cat" id="btn-add-cat">＋ 카테고리 추가</button>
   </div>
   <div class="sidebar-footer">
-    <button class="btn-drive" id="btn-drive">
-      <span id="drive-icon">☁️</span>
-      <span id="drive-label">구글 로그인</span>
-    </button>
-    <div class="drive-status" id="drive-status">로그인하면 기기간 동기화</div>
+    <!-- GAS 앱은 이미 구글 계정으로 로그인된 상태이므로 동기화 상태만 표시 -->
+    <div class="btn-drive" style="cursor:default;">
+      <span id="drive-icon">✅</span>
+      <span id="drive-label">구글 드라이브 동기화됨</span>
+    </div>
+    <div class="drive-status" id="drive-status">모든 변경사항이 자동 저장됩니다</div>
   </div>
 </aside>
 
@@ -455,7 +443,7 @@
   </div>
 </div>
 
-<!-- 모달들 -->
+<!-- 카테고리/비밀번호 등 모달 -->
 <div class="modal-overlay" id="cat-modal">
   <div class="modal">
     <h3 id="cat-modal-title">카테고리 추가</h3>
@@ -495,46 +483,21 @@
   </div>
 </div>
 
-<!-- 로딩/로그인 화면 -->
-<div id="loading-screen" style="
-  display:flex; position:fixed; inset:0; z-index:999;
-  background:#1e1e2e; flex-direction:column;
-  align-items:center; justify-content:center; gap:20px;
-">
-  <div style="font-size:52px;">📒</div>
-  <div style="font-size:22px; font-weight:700; color:#89b4fa;">내 메모장</div>
-  <div id="loading-msg" style="font-size:14px; color:#cdd6f4; text-align:center; white-space:pre-line; line-height:1.7;"></div>
-  <div id="loading-spinner" style="width:28px;height:28px;border:3px solid #45475a;border-top-color:#89b4fa;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
-  <button id="loading-login-btn" style="
-    display:none; background:#89b4fa; color:#1e1e2e;
-    border:none; border-radius:10px; padding:12px 28px;
-    font-size:15px; font-weight:700; cursor:pointer;
-  ">🔑 구글 로그인</button>
-</div>
-<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
-
 <div class="toast" id="toast"></div>
-<script src="https://accounts.google.com/gsi/client" async></script>
 
 <script>
-// ── 모바일 높이 고정 ─────────────────────────────────────────
-// position:fixed + height:100vh 으로 처리하므로 별도 JS 불필요
-
-// ── 모바일 여부 ──────────────────────────────────────────────
+// ── 모바일 여부 및 UI 로직 ──────────────────────────────────────────────
 function isMobile() { return window.innerWidth <= 768; }
 
-// ── 모바일 키보드 올라올 때 에디터 높이 재조정 ──────────────
 if (window.visualViewport) {
   window.visualViewport.addEventListener('resize', () => {
     if (!isMobile()) {
-      // PC에서는 editor-panel 높이 강제 초기화
       document.getElementById('editor-panel').style.height = '';
       return;
     }
     const editorWrap = document.getElementById('cm-editor-wrap');
     if (!editorWrap) return;
-    document.getElementById('editor-panel').style.height =
-      (window.visualViewport.height) + 'px';
+    document.getElementById('editor-panel').style.height = (window.visualViewport.height) + 'px';
     if (cmEditor) {
       setTimeout(() => {
         cmEditor.refresh();
@@ -543,14 +506,8 @@ if (window.visualViewport) {
       }, 50);
     }
   });
-  window.visualViewport.addEventListener('scroll', () => {
-    if (!isMobile() || !cmEditor) return;
-    const cursor = cmEditor.getCursor();
-    cmEditor.scrollIntoView(cursor, 80);
-  });
 }
 
-// PC에서 창 크기 변경 시 높이 리셋
 window.addEventListener('resize', () => {
   if (!isMobile()) {
     document.getElementById('editor-panel').style.height = '';
@@ -558,30 +515,21 @@ window.addEventListener('resize', () => {
   }
 });
 
-// ── 맨위/맨아래 버튼 ─────────────────────────────────────────
 function updateScrollBtns() {
   const btns = document.getElementById('scroll-btns');
   const editorShown = document.getElementById('editor-area').style.display === 'flex';
   const onEditorPanel = !isMobile() || document.body.classList.contains('show-editor');
-  if (editorShown && onEditorPanel) {
-    btns.classList.add('visible');
-  } else {
-    btns.classList.remove('visible');
-  }
+  if (editorShown && onEditorPanel) btns.classList.add('visible');
+  else btns.classList.remove('visible');
 }
 
-document.getElementById('btn-scroll-top').addEventListener('click', () => {
-  if (cmEditor) cmEditor.scrollTo(0, 0);
-});
-document.getElementById('btn-scroll-bot').addEventListener('click', () => {
-  if (cmEditor) cmEditor.scrollIntoView({ line: cmEditor.lastLine(), ch: 0 });
-});
+document.getElementById('btn-scroll-top').addEventListener('click', () => { if (cmEditor) cmEditor.scrollTo(0, 0); });
+document.getElementById('btn-scroll-bot').addEventListener('click', () => { if (cmEditor) cmEditor.scrollIntoView({ line: cmEditor.lastLine(), ch: 0 }); });
 
-// ── 모바일 패널 전환 ─────────────────────────────────────────
 function showPanel(panel) {
   if (!isMobile()) return;
   document.body.classList.remove('show-list', 'show-editor');
-  if (panel === 'list')   document.body.classList.add('show-list');
+  if (panel === 'list') document.body.classList.add('show-list');
   if (panel === 'editor') document.body.classList.add('show-editor');
   setTimeout(updateScrollBtns, 50);
 }
@@ -589,9 +537,7 @@ function showPanel(panel) {
 document.getElementById('btn-sidebar-to-list').addEventListener('click', () => showPanel('list'));
 document.getElementById('btn-list-back').addEventListener('click', () => showPanel('sidebar'));
 document.getElementById('btn-editor-back').addEventListener('click', () => showPanel('list'));
-document.querySelectorAll('.nav-item').forEach(item => {
-  item.addEventListener('click', () => { if (isMobile()) showPanel('list'); });
-});
+document.querySelectorAll('.nav-item').forEach(item => { item.addEventListener('click', () => { if (isMobile()) showPanel('list'); }); });
 document.getElementById('cat-list').addEventListener('click', () => { if (isMobile()) showPanel('list'); });
 
 // ── CodeMirror 5 초기화 ───────────────────────────────────────
@@ -609,15 +555,12 @@ function initCM() {
   });
   cmEditor.setSize('100%', '100%');
 
-  // ── 자동저장: 타이핑 멈추고 1.5초 후 ──
   let autoSaveTimer = null;
   cmEditor.on('change', () => {
     if (!currentNote) return;
     setSaveStatus('idle', '✏️ 편집 중...');
     clearTimeout(autoSaveTimer);
-    autoSaveTimer = setTimeout(() => {
-      saveCurrentNote(true); // silent: 화면 재렌더링 없이 저장
-    }, 1500);
+    autoSaveTimer = setTimeout(() => saveCurrentNote(true), 3000);
   });
 }
 function getCMText() { return cmEditor ? cmEditor.getValue() : ''; }
@@ -666,9 +609,7 @@ function scrollToMatch(idx) {
   cmEditor.scrollIntoView(cmEditor.posFromIndex(inNoteMatches[idx]), 100);
   cmEditor.setCursor(cmEditor.posFromIndex(inNoteMatches[idx]));
 }
-function updateInNoteCount() {
-  document.getElementById('in-note-search-count').textContent = inNoteMatches.length === 0 ? '없음' : `${inNoteCurrent+1}/${inNoteMatches.length}`;
-}
+function updateInNoteCount() { document.getElementById('in-note-search-count').textContent = inNoteMatches.length === 0 ? '없음' : `${inNoteCurrent+1}/${inNoteMatches.length}`; }
 function inNoteNext() { if (!inNoteMatches.length) return; inNoteCurrent = (inNoteCurrent+1)%inNoteMatches.length; scrollToMatch(inNoteCurrent); updateInNoteCount(); }
 function inNotePrev() { if (!inNoteMatches.length) return; inNoteCurrent = (inNoteCurrent-1+inNoteMatches.length)%inNoteMatches.length; scrollToMatch(inNoteCurrent); updateInNoteCount(); }
 document.getElementById('btn-in-note-search').addEventListener('click', openInNoteSearch);
@@ -681,40 +622,23 @@ document.getElementById('in-note-search-input').addEventListener('keydown', e =>
   if (e.key === 'Escape') closeInNoteSearch();
 });
 
-// ── Google Drive ─────────────────────────────────────────────
-const CLIENT_ID = '241891084572-gjtpciga7htfd3boa894uube0o1kp4mo.apps.googleusercontent.com';
-const SCOPE = 'https://www.googleapis.com/auth/drive.file';
-let accessToken = null, driveFileId = localStorage.getItem('driveFileId') || null;
-let tokenClient = null, driveConnected = false, isSavingToDrive = false;
-let pendingDriveSave = false, lastSavedJson = null, saveDebounceTimer = null;
-let driveLoadDone = false; // 드라이브 로딩 완료 여부
-
-// ── 앱 상태 ───────────────────────────────────────────────────
+// ── Google Apps Script 연동 데이터 관리 ──────────────────────
 const CAT_COLORS = ['#89b4fa','#cba6f7','#f38ba8','#a6e3a1','#f9e2af','#94e2d5','#fab387','#eba0ac'];
-let notes = JSON.parse(localStorage.getItem('notes') || '[]');
-let categories = JSON.parse(localStorage.getItem('categories') || '[]');
-let masterHash = localStorage.getItem('masterHash') || null;
+let notes = [];
+let categories = [];
+let masterHash = null;
 let currentNote = null, currentFilter = 'all', currentCat = null;
 let sortMode = 'updated', searchQuery = '', selectedColor = CAT_COLORS[0];
 let editingCatId = null, hiddenVisible = false;
+let driveLoadDone = false;
+let isSavingToDrive = false, pendingDriveSave = false;
+let lastSavedJson = null, saveDebounceTimer = null;
 const unlockedSet = new Set();
-
-if (!categories.length) {
-  categories = [
-    { id: uid(), name: '업무', color: '#89b4fa' },
-    { id: uid(), name: '개인', color: '#cba6f7' },
-    { id: uid(), name: '아이디어', color: '#a6e3a1' },
-  ];
-  saveLocal();
-}
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function escRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
-function highlight(text, q) {
-  if (!q) return escHtml(text);
-  return escHtml(text).replace(new RegExp('('+escRe(q)+')','gi'),'<mark>$1</mark>');
-}
+function highlight(text, q) { return !q ? escHtml(text) : escHtml(text).replace(new RegExp('('+escRe(q)+')','gi'),'<mark>$1</mark>'); }
 function fmtDate(ts) {
   const d = new Date(ts), now = new Date(), diffD = Math.floor((now-d)/86400000);
   if (diffD===0) return '오늘 '+d.toLocaleTimeString('ko',{hour:'2-digit',minute:'2-digit'});
@@ -736,176 +660,61 @@ function setSaveStatus(state, msg='') {
   el.className = state; el.textContent = msg;
 }
 
-function saveLocal() {
-  localStorage.setItem('notes', JSON.stringify(notes));
-  localStorage.setItem('categories', JSON.stringify(categories));
-  if (masterHash) localStorage.setItem('masterHash', masterHash);
-}
-
-async function saveToDriveQueued() {
-  if (!driveConnected || !accessToken || !driveFileId) return;
-  if (!driveLoadDone) return; // 드라이브 로딩 완료 전엔 저장 금지
-  const currentJson = JSON.stringify({notes,categories,masterHash});
-  if (currentJson === lastSavedJson) return;
-  if (isSavingToDrive) { pendingDriveSave = true; return; }
-  isSavingToDrive = true; setSaveStatus('saving','☁️ 저장 중...');
-  document.getElementById('btn-save').disabled = true;
-  try {
-    const resp = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,
-      {method:'PATCH',headers:{Authorization:`Bearer ${accessToken}`,'Content-Type':'application/json'},body:currentJson});
-    if (resp.status===401) { handleTokenExpiry(); }
-    else if (!resp.ok) { setSaveStatus('error','⚠️ 저장 실패'); }
-    else { lastSavedJson=currentJson; setSaveStatus('saved','✓ 저장됨'); setTimeout(()=>setSaveStatus('idle',''),3000); }
-  } catch(e) { setSaveStatus('error','⚠️ 네트워크 오류'); }
-  finally {
-    isSavingToDrive=false; document.getElementById('btn-save').disabled=false;
-    if (pendingDriveSave) { pendingDriveSave=false; saveToDriveQueued(); }
-  }
-}
-
-async function save() {
-  if (!driveLoadDone) return; // 드라이브 로딩 완료 전엔 저장 금지
-  saveLocal();
-  saveToDriveQueued();
-}
-
+// ── GAS 템플릿 엔진으로 데이터 즉시 주입 ──
 window.onload = () => {
   initCM();
-  const saved = localStorage.getItem('gToken');
-  if (saved) {
-    accessToken = saved;
-    showLoadingScreen(true);
-    loadFromDrive().catch(() => {
-      accessToken = null; localStorage.removeItem('gToken');
-      updateDriveUI(false);
-      driveLoadDone = false;
-      showLoadingScreen(false, true);
-    });
-  } else {
-    showLoadingScreen(false, true);
+  
+  try {
+    // 서버 측에서 HTML을 그릴 때 미리 구글 드라이브 데이터를 끼워 넣습니다 (로딩 지연 없음)
+    const serverDataStr = <?!= JSON.stringify(serverData || {"notes":[],"categories":[],"masterHash":null}) ?>;
+    const data = typeof serverDataStr === 'string' ? JSON.parse(serverDataStr) : serverDataStr;
+    
+    if (Array.isArray(data.notes)) notes = data.notes;
+    if (Array.isArray(data.categories) && data.categories.length) categories = data.categories;
+    if (data.masterHash) masterHash = data.masterHash;
+    if (Array.isArray(data.templates)) templates = data.templates;
+    lastSavedJson = JSON.stringify(data);
+  } catch(e) { console.error("데이터 파싱 오류", e); }
+  
+  if (!categories.length) {
+    categories = [
+      { id: uid(), name: '업무', color: '#89b4fa' },
+      { id: uid(), name: '개인', color: '#cba6f7' },
+      { id: uid(), name: '아이디어', color: '#a6e3a1' },
+    ];
   }
+  driveLoadDone = true;
+  renderAll();
 };
 
-// 401 세션 만료 감지 → 자동 로그인 화면 이동
-function handleTokenExpiry() {
-  accessToken = null;
-  localStorage.removeItem('gToken');
-  driveConnected = false;
-  driveLoadDone = false;
-  updateDriveUI(false);
-  showLoadingScreen(false, true);
-  showToast('세션이 만료됐어요. 다시 로그인해주세요.');
+// ── GAS 백엔드로 데이터 저장하기 ──
+function saveToDriveQueued() {
+  if (!driveLoadDone) return;
+  const currentJson = JSON.stringify({notes, categories, masterHash, templates});
+  if (currentJson === lastSavedJson) return;
+  if (isSavingToDrive) { pendingDriveSave = true; return; }
+  
+  isSavingToDrive = true; 
+  setSaveStatus('saving','☁️ 저장 중...');
+
+  google.script.run
+    .withSuccessHandler(function() {
+      lastSavedJson = currentJson;
+      setSaveStatus('saved','✓ 저장됨');
+      setTimeout(()=>setSaveStatus('idle',''),3000);
+      isSavingToDrive = false;
+      if (pendingDriveSave) { pendingDriveSave = false; saveToDriveQueued(); }
+    })
+    .withFailureHandler(function(error) {
+      setSaveStatus('error','⚠️ 저장 실패');
+      showToast('저장 오류: ' + error.message);
+      isSavingToDrive = false;
+      if (pendingDriveSave) { pendingDriveSave = false; saveToDriveQueued(); }
+    })
+    .saveDataToDrive(currentJson);
 }
 
-function showLoadingScreen(loading, needLogin = false) {
-  const el = document.getElementById('loading-screen');
-  const spinner = document.getElementById('loading-spinner');
-  const loginBtn = document.getElementById('loading-login-btn');
-  if (loading) {
-    el.style.display = 'flex';
-    document.getElementById('loading-msg').textContent = '☁️ 드라이브에서 불러오는 중...';
-    spinner.style.display = 'block';
-    loginBtn.style.display = 'none';
-  } else if (needLogin) {
-    el.style.display = 'flex';
-    document.getElementById('loading-msg').textContent = '구글 드라이브에 로그인하여\n메모장을 시작하세요';
-    spinner.style.display = 'none';
-    loginBtn.style.display = 'block';
-  } else {
-    el.style.display = 'none';
-  }
-}
-
-document.getElementById('loading-login-btn').addEventListener('click', () => {
-  initTokenClient();
-  tokenClient.requestAccessToken({ prompt: 'select_account' });
-});
-
-function initTokenClient() {
-  if (tokenClient) return;
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID, scope: SCOPE,
-    callback: async (resp) => {
-      if (resp.error) {
-        // 로그인 실패해도 로딩화면 유지 (로컬로 이동 안 함)
-        showToast('로그인 실패. 다시 시도해주세요.');
-        showLoadingScreen(false, true);
-        return;
-      }
-      accessToken=resp.access_token; localStorage.setItem('gToken',accessToken);
-      showLoadingScreen(true);
-      await loadFromDrive();
-    },
-    error_callback: (err) => {
-      // 팝업 차단 등 에러 시에도 로그인 화면 유지
-      showLoadingScreen(false, true);
-      showToast('로그인 창이 차단됐어요. 팝업을 허용해주세요.');
-    }
-  });
-}
-
-document.getElementById('btn-drive').addEventListener('click', () => {
-  if (driveConnected) {
-    if (confirm('구글 드라이브 연결을 해제할까요?')) {
-      if (accessToken) google.accounts.oauth2.revoke(accessToken,()=>{});
-      accessToken=null; driveConnected=false; driveLoadDone=false;
-      localStorage.removeItem('gToken'); updateDriveUI(false);
-      showToast('드라이브 연결이 해제되었습니다');
-      showLoadingScreen(false, true);
-    }
-  } else {
-    initTokenClient(); tokenClient.requestAccessToken({prompt:''});
-  }
-});
-
-function updateDriveUI(connected) {
-  driveConnected=connected;
-  document.getElementById('btn-drive').classList.toggle('connected',connected);
-  document.getElementById('drive-icon').textContent = connected?'✅':'☁️';
-  document.getElementById('drive-label').textContent = connected?'드라이브 연결됨':'구글 드라이브 연결';
-  document.getElementById('drive-status').textContent = connected?'저장 시 자동으로 드라이브에 동기화':'연결하면 자동 저장·동기화';
-}
-
-async function findOrCreateFile() {
-  if (driveFileId) return;
-  const resp = await fetch(`https://www.googleapis.com/drive/v3/files?q=name%3D'memo-notes.json'+and+trashed%3Dfalse&fields=files(id)`,{headers:{Authorization:`Bearer ${accessToken}`}});
-  if (!resp.ok) throw new Error('Drive 접근 실패');
-  const data = await resp.json();
-  if (data.files?.length) { driveFileId=data.files[0].id; }
-  else {
-    const form = new FormData();
-    form.append('metadata',new Blob([JSON.stringify({name:'memo-notes.json',mimeType:'application/json'})],{type:'application/json'}));
-    form.append('file',new Blob([JSON.stringify({notes:[],categories:[],masterHash:null})],{type:'application/json'}));
-    const cr = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{Authorization:`Bearer ${accessToken}`},body:form});
-    driveFileId=(await cr.json()).id;
-  }
-  localStorage.setItem('driveFileId',driveFileId);
-}
-
-async function loadFromDrive() {
-  try {
-    await findOrCreateFile();
-    const resp = await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`,{headers:{Authorization:`Bearer ${accessToken}`}});
-    if (!resp.ok) throw new Error('불러오기 실패');
-    const data = await resp.json();
-    if (Array.isArray(data.notes)) notes=data.notes;
-    if (Array.isArray(data.categories)&&data.categories.length) categories=data.categories;
-    if (data.masterHash) { masterHash=data.masterHash; localStorage.setItem('masterHash',masterHash); }
-    lastSavedJson=JSON.stringify({notes,categories,masterHash});
-    saveLocal(); updateDriveUI(true);
-    driveLoadDone = true;
-    showLoadingScreen(false);
-    renderAll();
-    showToast('☁️ 드라이브에서 불러왔습니다');
-  } catch(e) {
-    // 토큰 만료 등 실패 시 로그인 화면으로
-    accessToken = null; localStorage.removeItem('gToken');
-    driveFileId = null; localStorage.removeItem('driveFileId');
-    showLoadingScreen(false, true);
-    showToast('⚠️ 드라이브 연결 실패. 다시 로그인해주세요.');
-  }
-}
-
+function save() { saveToDriveQueued(); }
 
 // ── 렌더링 ───────────────────────────────────────────────────
 function renderCategories() {
@@ -939,7 +748,6 @@ function getFilteredNotes() {
   const q=searchQuery.trim().toLowerCase();
   list=currentFilter==='hidden'?list.filter(n=>n.hidden):list.filter(n=>!n.hidden);
   if(q) {
-    // 제목 먼저 검색, 없으면 본문+태그 검색
     const titleMatches = list.filter(n=>n.title.toLowerCase().includes(q));
     const bodyMatches  = list.filter(n=>!n.title.toLowerCase().includes(q) &&
       (n.body.toLowerCase().includes(q)||(n.tags||[]).some(t=>t.toLowerCase().includes(q))));
@@ -1058,40 +866,39 @@ function renderTags(tags){
   chips.querySelectorAll('.tag-chip').forEach(chip=>{chip.addEventListener('click',()=>{if(!currentNote)return;currentNote.tags=(currentNote.tags||[]).filter(t=>t!==chip.dataset.tag);renderTags(currentNote.tags);});});
 }
 
-async function saveCurrentNote(silent = false){
+function saveCurrentNote(silent = false){
   if(!currentNote)return;
   currentNote.title=document.getElementById('note-title').value.trim();
   currentNote.body=getCMText(); currentNote.cat=document.getElementById('note-cat').value;
   currentNote.starred=document.getElementById('note-starred').checked; currentNote.updated=Date.now();
   const idx=notes.findIndex(n=>n.id===currentNote.id);
   if(idx>=0)notes[idx]=currentNote;else notes.unshift(currentNote);
-  await save();
+  save();
   document.getElementById('note-date').textContent='수정: '+fmtDate(currentNote.updated);
-  // 자동저장 시엔 renderAll 생략 (화면 재렌더링 없이 조용히 저장)
   if (!silent) renderAll();
-  else renderNoteList(); // 메모 목록 날짜만 업데이트
+  else renderNoteList();
 }
 
 function newNote(){
   const note={id:uid(),title:'',body:'',cat:currentFilter==='cat'?currentCat:(categories[0]?.id||''),
     tags:[],starred:false,locked:false,lockHash:null,hidden:false,created:Date.now(),updated:Date.now()};
-  currentNote=note;notes.unshift(note);saveLocal();
+  currentNote=note;notes.unshift(note);
   showEditorState('editor');
   document.getElementById('note-title').value=''; setCMText('');
   document.getElementById('note-starred').checked=false;
   document.getElementById('note-date').textContent='방금 생성'; setSaveStatus('idle','');
   renderTags([]); updateCatSelect(); document.getElementById('note-cat').value=note.cat; updateLockHideButtons();
   renderAll(); if(isMobile())showPanel('editor'); document.getElementById('note-title').focus();
+  save();
 }
 
 document.getElementById('btn-new-note').addEventListener('click',newNote);
 document.getElementById('btn-start').addEventListener('click',newNote);
-document.getElementById('btn-save').addEventListener('click',saveCurrentNote);
+document.getElementById('btn-save').addEventListener('click', () => saveCurrentNote(false));
 document.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();clearTimeout(saveDebounceTimer);saveDebounceTimer=setTimeout(()=>saveCurrentNote(),300);}
 });
 
-// ── 제목/카테고리/즐겨찾기 변경 시 자동저장 ──
 let titleAutoSaveTimer = null;
 document.getElementById('note-title').addEventListener('input', () => {
   if (!currentNote) return;
@@ -1099,14 +906,8 @@ document.getElementById('note-title').addEventListener('input', () => {
   clearTimeout(titleAutoSaveTimer);
   titleAutoSaveTimer = setTimeout(() => saveCurrentNote(true), 1500);
 });
-document.getElementById('note-cat').addEventListener('change', () => {
-  if (!currentNote) return;
-  saveCurrentNote();
-});
-document.getElementById('note-starred').addEventListener('change', () => {
-  if (!currentNote) return;
-  saveCurrentNote();
-});
+document.getElementById('note-cat').addEventListener('change', () => { if (currentNote) saveCurrentNote(); });
+document.getElementById('note-starred').addEventListener('change', () => { if (currentNote) saveCurrentNote(); });
 
 document.getElementById('tag-input').addEventListener('keydown',e=>{
   if(e.key==='Enter'||e.key===','){e.preventDefault();const val=e.target.value.trim().replace(/^#/,'');if(!val||!currentNote)return;currentNote.tags=currentNote.tags||[];if(!currentNote.tags.includes(val)){currentNote.tags.push(val);renderTags(currentNote.tags);}e.target.value='';}
@@ -1140,7 +941,7 @@ function openSetPwdModal(note){
 }
 document.getElementById('set-pwd-remove').addEventListener('click',async()=>{
   if(!currentNote)return;currentNote.locked=false;currentNote.lockHash=null;unlockedSet.delete(currentNote.id);
-  await save();updateLockHideButtons();showToast('🔓 잠금이 해제되었습니다');document.getElementById('set-pwd-modal').classList.remove('open');renderAll();
+  save();updateLockHideButtons();showToast('🔓 잠금이 해제되었습니다');document.getElementById('set-pwd-modal').classList.remove('open');renderAll();
 });
 document.getElementById('set-pwd-confirm-btn').addEventListener('click',async()=>{
   const pw=document.getElementById('set-pwd-input').value,pw2=document.getElementById('set-pwd-confirm').value,errEl=document.getElementById('set-pwd-err');
@@ -1148,15 +949,15 @@ document.getElementById('set-pwd-confirm-btn').addEventListener('click',async()=
   if(pw!==pw2){errEl.textContent='비밀번호가 일치하지 않습니다';return;}
   if(pw.length<4){errEl.textContent='4자리 이상 입력하세요';return;}
   currentNote.locked=true;currentNote.lockHash=await hashStr(pw);unlockedSet.add(currentNote.id);
-  await save();updateLockHideButtons();showToast('🔒 비밀번호가 설정되었습니다');document.getElementById('set-pwd-modal').classList.remove('open');renderAll();
+  save();updateLockHideButtons();showToast('🔒 비밀번호가 설정되었습니다');document.getElementById('set-pwd-modal').classList.remove('open');renderAll();
 });
 document.getElementById('set-pwd-cancel').addEventListener('click',()=>document.getElementById('set-pwd-modal').classList.remove('open'));
 document.getElementById('set-pwd-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open');});
 
 document.getElementById('btn-hide-note').addEventListener('click',async()=>{
   if(!currentNote)return;
-  if(currentNote.hidden){currentNote.hidden=false;await save();updateLockHideButtons();showToast('👁 숨김이 해제되었습니다');renderAll();}
-  else{currentNote.hidden=true;await save();currentNote=null;showEditorState('none');showToast('🙈 메모가 숨겨졌습니다');renderAll();if(isMobile())showPanel('list');}
+  if(currentNote.hidden){currentNote.hidden=false;save();updateLockHideButtons();showToast('👁 숨김이 해제되었습니다');renderAll();}
+  else{currentNote.hidden=true;save();currentNote=null;showEditorState('none');showToast('🙈 메모가 숨겨졌습니다');renderAll();if(isMobile())showPanel('list');}
 });
 
 document.getElementById('nav-hidden').addEventListener('click',async()=>{
@@ -1178,7 +979,7 @@ document.getElementById('hidden-pwd-confirm-btn').addEventListener('click',async
     const pw2=document.getElementById('hidden-pwd-confirm').value;
     if(pw!==pw2){errEl.textContent='비밀번호가 일치하지 않습니다';return;}
     if(pw.length<4){errEl.textContent='4자리 이상 입력하세요';return;}
-    masterHash=await hashStr(pw);localStorage.setItem('masterHash',masterHash);await save();
+    masterHash=await hashStr(pw);save();
     document.getElementById('hidden-pwd-modal').classList.remove('open');hiddenVisible=true;applyHiddenFilter();showToast('🔐 마스터 비밀번호가 설정되었습니다');
   } else {
     const ok=await verifyHash(pw,masterHash);
@@ -1238,10 +1039,7 @@ document.getElementById('cat-confirm').addEventListener('click',()=>{
 document.getElementById('cat-name-input').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('cat-confirm').click();});
 document.getElementById('cat-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open');});
 
-renderAll();
-
 // ── 체크리스트 ───────────────────────────────────────────────
-// 버튼: 현재 커서 위치에 [ ] 삽입 (이미 체크리스트 줄이면 토글)
 document.getElementById('btn-checklist').addEventListener('click', () => {
   if (!cmEditor) return;
   const cursor = cmEditor.getCursor();
@@ -1252,15 +1050,12 @@ document.getElementById('btn-checklist').addEventListener('click', () => {
     const newLine = isChecked ? lineContent.replace('[x] ', '[ ] ') : lineContent.replace('[ ] ', '[x] ');
     cmEditor.replaceRange(newLine, {line: cursor.line, ch: 0}, {line: cursor.line, ch: lineContent.length});
   } else {
-    // 현재 커서 위치에 [ ] 삽입
     cmEditor.replaceRange('[ ] ', cursor);
     cmEditor.setCursor({line: cursor.line, ch: cursor.ch + 4});
   }
   cmEditor.focus();
 });
 
-// "[ ] " 직접 타이핑 시 자동 인식 (이미 올바른 형식이라 별도 변환 불필요)
-// [ ] 클릭 시 체크 토글
 document.getElementById('cm-editor-wrap').addEventListener('click', e => {
   if (!cmEditor) return;
   const coords = cmEditor.coordsChar({left: e.clientX, top: e.clientY});
@@ -1277,9 +1072,6 @@ document.getElementById('cm-editor-wrap').addEventListener('click', e => {
   }
 });
 
-// "[ ]" 타이핑 후 스페이스 누르면 자동으로 체크리스트 완성
-// (예: [ ] 입력하면 [ ] 로 그냥 두되, 클릭하면 토글되게)
-// CM change 이벤트: 줄에 [ ] 또는 [x] 만 있고 그 다음 스페이스 없으면 스페이스 자동 추가
 function attachChecklistTyping() {
   if (!cmEditor) return;
   cmEditor.on('change', (editor, change) => {
@@ -1287,7 +1079,6 @@ function attachChecklistTyping() {
     const cursor = editor.getCursor();
     const line = editor.getLine(cursor.line);
     if (!line) return;
-    // 줄이 정확히 "[ ]" 또는 "[x]" 로만 되어있으면 스페이스 자동 추가
     if (line === '[ ]' || line === '[x]') {
       editor.replaceRange(' ', {line: cursor.line, ch: line.length}, {line: cursor.line, ch: line.length}, '+checklist');
       editor.setCursor({line: cursor.line, ch: line.length + 1});
@@ -1296,14 +1087,10 @@ function attachChecklistTyping() {
 }
 attachChecklistTyping();
 
-
-
 // ── 템플릿 ───────────────────────────────────────────────────
-let templates = JSON.parse(localStorage.getItem('templates') || '[]');
-
-function saveTemplates() {
-  localStorage.setItem('templates', JSON.stringify(templates));
-}
+// 템플릿은 브라우저 로컬 스토리지 유지 (선택사항이므로 기기 귀속)
+let templates = [];
+function saveTemplates() { saveToDriveQueued(); }
 
 function renderTemplateList() {
   const el = document.getElementById('template-list');
@@ -1323,7 +1110,6 @@ function renderTemplateList() {
       <button class="template-item-del" data-idx="${i}" title="삭제">🗑</button>`;
     div.addEventListener('click', e => {
       if (e.target.closest('.template-item-del')) return;
-      // 현재 메모에 템플릿 내용 추가
       if (!cmEditor) return;
       const current = cmEditor.getValue();
       const insert = current ? current + '\n\n' + t.body : t.body;
@@ -1344,19 +1130,10 @@ function renderTemplateList() {
   });
 }
 
-// 템플릿 불러오기 버튼
-document.getElementById('btn-template').addEventListener('click', () => {
-  renderTemplateList();
-  document.getElementById('template-modal').classList.add('open');
-});
-document.getElementById('template-cancel').addEventListener('click', () => {
-  document.getElementById('template-modal').classList.remove('open');
-});
-document.getElementById('template-modal').addEventListener('click', e => {
-  if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
-});
+document.getElementById('btn-template').addEventListener('click', () => { renderTemplateList(); document.getElementById('template-modal').classList.add('open'); });
+document.getElementById('template-cancel').addEventListener('click', () => { document.getElementById('template-modal').classList.remove('open'); });
+document.getElementById('template-modal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); });
 
-// 템플릿 저장 버튼
 document.getElementById('btn-save-template').addEventListener('click', () => {
   if (!currentNote) { showToast('메모를 먼저 열어주세요'); return; }
   const defaultName = document.getElementById('note-title').value.trim() || '새 템플릿';
@@ -1366,12 +1143,8 @@ document.getElementById('btn-save-template').addEventListener('click', () => {
   document.getElementById('template-name-input').focus();
   document.getElementById('template-name-input').select();
 });
-document.getElementById('save-template-cancel').addEventListener('click', () => {
-  document.getElementById('save-template-modal').classList.remove('open');
-});
-document.getElementById('save-template-modal').addEventListener('click', e => {
-  if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
-});
+document.getElementById('save-template-cancel').addEventListener('click', () => { document.getElementById('save-template-modal').classList.remove('open'); });
+document.getElementById('save-template-modal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); });
 document.getElementById('save-template-confirm').addEventListener('click', () => {
   const name = document.getElementById('template-name-input').value.trim();
   if (!name) { document.getElementById('template-err').textContent = '이름을 입력하세요'; return; }
@@ -1382,18 +1155,12 @@ document.getElementById('save-template-confirm').addEventListener('click', () =>
   document.getElementById('save-template-modal').classList.remove('open');
   showToast('💾 템플릿으로 저장됐어요!');
 });
-document.getElementById('template-name-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('save-template-confirm').click();
-});
-
+document.getElementById('template-name-input').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('save-template-confirm').click(); });
 
 (function() {
   if (!isMobile()) return;
-
   const wrap = document.getElementById('cm-editor-wrap');
   wrap.style.position = 'relative';
-
-  // 스크롤바 너비만큼 CodeMirror 오른쪽 패딩 추가 (글자 안 가림)
   const style = document.createElement('style');
   style.textContent = '.CodeMirror-scroll { padding-right: 36px !important; }';
   document.head.appendChild(style);
@@ -1458,16 +1225,6 @@ document.getElementById('template-name-input').addEventListener('keydown', e => 
     else bar.style.display = 'none';
   }).observe(document.getElementById('editor-area'), { attributes: true, attributeFilter: ['style'] });
 })();
-</script>
-
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./service-worker.js')
-        .then(reg => console.log('SW 등록 완료:', reg.scope))
-        .catch(err => console.log('SW 등록 실패:', err));
-    });
-  }
 </script>
 </body>
 </html>
