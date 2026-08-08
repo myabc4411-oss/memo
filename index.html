@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <title>내 메모장</title>
-
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -107,20 +107,23 @@
     .btn-icon-tool.active-lock { background: #fef3cd; border-color: #f9e2af; }
     .btn-icon-tool.active-hide { background: #f0e6ff; border-color: #cba6f7; }
 
-    /* CodeMirror */
-    #cm-editor-wrap { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
-    .CodeMirror { flex: 1; height: 100% !important; font-family: 'Segoe UI', system-ui, sans-serif !important; font-size: 14.5px !important; line-height: 1.75 !important; color: var(--text) !important; background: var(--editor-bg) !important; border: none !important; }
-    .CodeMirror-scroll { padding: 24px 28px !important; }
-    .CodeMirror-lines { padding: 0 !important; }
-    .CodeMirror-cursor { border-left-color: var(--accent) !important; }
-    .CodeMirror-selected { background: rgba(137,180,250,0.25) !important; }
-    .CodeMirror-focused .CodeMirror-selected { background: rgba(137,180,250,0.35) !important; }
-    .CodeMirror-gutters { display: none !important; }
-    .CodeMirror-activeline-background { background: transparent !important; }
-    .CodeMirror-vscrollbar::-webkit-scrollbar { width: 6px; }
-    .CodeMirror-vscrollbar::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
-    .CodeMirror-focused { outline: none !important; }
-    .CodeMirror-placeholder { color: #ccc !important; }
+    /* 고속 Textarea 에디터 */
+    #cm-editor-wrap { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-height: 0; position: relative; }
+    #note-body {
+      flex: 1; width: 100%; height: 100%;
+      padding: 24px 28px;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 14.5px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--editor-bg);
+      border: none;
+      outline: none;
+      resize: none;
+    }
+    #note-body::placeholder { color: #ccc; }
+    #note-body::-webkit-scrollbar { width: 6px; }
+    #note-body::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
 
     /* 메모 내 검색바 */
     #in-note-search-bar { display: none; align-items: center; gap: 8px; padding: 8px 20px; background: #f0f0eb; border-bottom: 1px solid var(--border); flex-shrink: 0; }
@@ -133,8 +136,6 @@
     #in-note-search-count { font-size: 12px; color: var(--muted); white-space: nowrap; min-width: 48px; text-align: center; }
     #btn-close-in-search { background: none; border: none; cursor: pointer; font-size: 16px; color: var(--muted); padding: 2px 4px; border-radius: 4px; }
     #btn-close-in-search:hover { color: var(--danger); }
-    .cm-searching { background: #fef08a !important; border-radius: 2px; }
-    .cm-searching-current { background: #f97316 !important; color: #fff !important; border-radius: 2px; }
 
     /* 저장 상태 */
     #save-status { font-size: 11.5px; padding: 3px 8px; border-radius: 5px; white-space: nowrap; transition: all .2s; }
@@ -172,10 +173,6 @@
     .btn-cancel { background: #f0f0eb; border: none; border-radius: 7px; padding: 7px 16px; font-size: 13px; cursor: pointer; }
     .btn-danger-sm { background: #fde8ec; color: var(--danger); border: none; border-radius: 7px; padding: 7px 14px; font-size: 13px; cursor: pointer; margin-right: auto; }
     .btn-confirm { background: var(--accent); color: #fff; border: none; border-radius: 7px; padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer; }
-
-    /* 체크리스트 */
-    .cm-line-checked { text-decoration: line-through; color: var(--muted) !important; }
-    .checkbox-render { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
 
     /* 템플릿 목록 */
     .template-item {
@@ -277,21 +274,8 @@
       .editor-meta { gap: 6px; }
       .modal { width: calc(100% - 40px); }
 
-      .CodeMirror-vscrollbar::-webkit-scrollbar { width: 20px !important; }
-      .CodeMirror-vscrollbar::-webkit-scrollbar-track {
-        background: rgba(0,0,0,0.06);
-        border-radius: 10px;
-      }
-      .CodeMirror-vscrollbar::-webkit-scrollbar-thumb {
-        background: rgba(137,180,250,0.9) !important;
-        border-radius: 10px !important;
-        border: 3px solid transparent !important;
-        background-clip: padding-box !important;
-        min-height: 48px;
-      }
-      .CodeMirror-vscrollbar::-webkit-scrollbar-thumb:active {
-        background: #89b4fa !important;
-      }
+      #note-body::-webkit-scrollbar { width: 10px; }
+      #note-body::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.25); border-radius: 5px; }
       #note-list::-webkit-scrollbar { width: 20px; }
       #note-list::-webkit-scrollbar-track { background: rgba(0,0,0,0.06); border-radius: 10px; }
       #note-list::-webkit-scrollbar-thumb {
@@ -311,6 +295,17 @@
   </style>
 </head>
 <body>
+
+<!-- 로딩/로그인 화면 -->
+<div id="login-screen" style="display:flex;position:fixed;inset:0;z-index:999;background:#1e1e2e;flex-direction:column;align-items:center;justify-content:center;gap:20px;">
+  <div style="font-size:52px;">📒</div>
+  <div style="font-size:22px;font-weight:700;color:#89b4fa;">내 메모장</div>
+  <div id="login-msg" style="font-size:14px;color:#cdd6f4;text-align:center;line-height:1.7;">구글 계정으로 로그인하세요</div>
+  <div id="login-spinner" style="display:none;width:28px;height:28px;border:3px solid #45475a;border-top-color:#89b4fa;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+  <button id="btn-google-login" style="background:#89b4fa;color:#1e1e2e;border:none;border-radius:10px;padding:12px 28px;font-size:15px;font-weight:700;cursor:pointer;">🔑 구글 로그인</button>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
 
 <aside id="sidebar">
   <div class="sidebar-header">
@@ -335,10 +330,9 @@
     <button class="btn-new-cat" id="btn-add-cat">＋ 카테고리 추가</button>
   </div>
   <div class="sidebar-footer">
-    <!-- GAS 앱은 이미 구글 계정으로 로그인된 상태이므로 동기화 상태만 표시 -->
-    <div class="btn-drive" style="cursor:default;">
-      <span id="drive-icon">✅</span>
-      <span id="drive-label">구글 드라이브 동기화됨</span>
+    <div class="btn-drive" id="btn-drive" style="cursor:pointer;">
+      <span id="drive-icon">🔥</span>
+      <span id="drive-label">동기화 중...</span>
     </div>
     <div class="drive-status" id="drive-status">모든 변경사항이 자동 저장됩니다</div>
   </div>
@@ -406,7 +400,7 @@
       <button id="btn-close-in-search">✕</button>
     </div>
     <div id="cm-editor-wrap">
-      <textarea id="cm-textarea"></textarea>
+      <textarea id="note-body" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="메모를 입력하세요..."></textarea>
     </div>
   </div>
 </div>
@@ -482,8 +476,8 @@
     </div>
   </div>
 </div>
-
 <div class="toast" id="toast"></div>
+
 
 <script>
 // ── 모바일 여부 및 UI 로직 ──────────────────────────────────────────────
@@ -498,20 +492,12 @@ if (window.visualViewport) {
     const editorWrap = document.getElementById('cm-editor-wrap');
     if (!editorWrap) return;
     document.getElementById('editor-panel').style.height = (window.visualViewport.height) + 'px';
-    if (cmEditor) {
-      setTimeout(() => {
-        cmEditor.refresh();
-        const cursor = cmEditor.getCursor();
-        cmEditor.scrollIntoView(cursor, 80);
-      }, 50);
-    }
   });
 }
 
 window.addEventListener('resize', () => {
   if (!isMobile()) {
     document.getElementById('editor-panel').style.height = '';
-    if (cmEditor) setTimeout(() => cmEditor.refresh(), 50);
   }
 });
 
@@ -523,8 +509,14 @@ function updateScrollBtns() {
   else btns.classList.remove('visible');
 }
 
-document.getElementById('btn-scroll-top').addEventListener('click', () => { if (cmEditor) cmEditor.scrollTo(0, 0); });
-document.getElementById('btn-scroll-bot').addEventListener('click', () => { if (cmEditor) cmEditor.scrollIntoView({ line: cmEditor.lastLine(), ch: 0 }); });
+document.getElementById('btn-scroll-top').addEventListener('click', () => {
+  const textarea = document.getElementById('note-body');
+  if (textarea) textarea.scrollTop = 0;
+});
+document.getElementById('btn-scroll-bot').addEventListener('click', () => {
+  const textarea = document.getElementById('note-body');
+  if (textarea) textarea.scrollTop = textarea.scrollHeight;
+});
 
 function showPanel(panel) {
   if (!isMobile()) return;
@@ -540,78 +532,89 @@ document.getElementById('btn-editor-back').addEventListener('click', () => showP
 document.querySelectorAll('.nav-item').forEach(item => { item.addEventListener('click', () => { if (isMobile()) showPanel('list'); }); });
 document.getElementById('cat-list').addEventListener('click', () => { if (isMobile()) showPanel('list'); });
 
-// ── CodeMirror 5 초기화 ───────────────────────────────────────
-let cmEditor = null;
-function initCM() {
-  if (cmEditor) return;
-  cmEditor = CodeMirror.fromTextArea(document.getElementById('cm-textarea'), {
-    lineWrapping: true, lineNumbers: false, autofocus: false,
-    indentWithTabs: false, electricChars: false, smartIndent: false,
-    placeholder: '메모를 입력하세요...',
-    extraKeys: {
-      'Ctrl-S': () => saveCurrentNote(), 'Cmd-S': () => saveCurrentNote(),
-      'Ctrl-F': () => openInNoteSearch(), 'Cmd-F': () => openInNoteSearch(),
-    },
-  });
-  cmEditor.setSize('100%', '100%');
+// ── 고속 Textarea 에디터 관리 ──────────────────────────────────
+function getCMText() {
+  const el = document.getElementById('note-body');
+  return el ? el.value : '';
+}
 
-  let autoSaveTimer = null;
-  cmEditor.on('change', () => {
-    if (!currentNote) return;
-    setSaveStatus('idle', '✏️ 편집 중...');
-    clearTimeout(autoSaveTimer);
-    autoSaveTimer = setTimeout(() => saveCurrentNote(true), 3000);
-  });
-}
-function getCMText() { return cmEditor ? cmEditor.getValue() : ''; }
 function setCMText(text) {
-  if (!cmEditor) return;
-  cmEditor.setValue(text || '');
-  cmEditor.clearHistory();
-  cmEditor.scrollTo(0, 0);
+  const el = document.getElementById('note-body');
+  if (!el) return;
+  el.value = text || '';
+  el.scrollTop = 0;
 }
+
+let isDirty = false;
+let autoSaveTimer = null;
+
+function flushCurrentNoteData() {
+  if (currentNote && isDirty) {
+    const bodyEl = document.getElementById('note-body');
+    if (bodyEl) currentNote.body = bodyEl.value;
+    const titleEl = document.getElementById('note-title');
+    if (titleEl) currentNote.title = titleEl.value.trim();
+    currentNote.updated = Date.now();
+    isDirty = false;
+  }
+}
+
+document.getElementById('note-body').addEventListener('input', () => {
+  if (!currentNote) return;
+  isDirty = true;
+  setSaveStatus('idle', '✏️ 편집 중...');
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(() => {
+    flushCurrentNoteData();
+    save();
+  }, 4000);
+});
 
 // ── 메모 내 검색 ─────────────────────────────────────────────
-let inNoteMatches = [], inNoteCurrent = -1, inNoteMarkers = [];
+let inNoteMatches = [], inNoteCurrent = -1;
 function openInNoteSearch() {
   document.getElementById('in-note-search-bar').classList.add('visible');
   const inp = document.getElementById('in-note-search-input');
   inp.focus(); inp.select();
-  if (cmEditor) setTimeout(() => cmEditor.refresh(), 10);
 }
 function closeInNoteSearch() {
   document.getElementById('in-note-search-bar').classList.remove('visible');
   document.getElementById('in-note-search-input').value = '';
-  clearInNoteHighlights();
   inNoteMatches = []; inNoteCurrent = -1;
   document.getElementById('in-note-search-count').textContent = '-';
 }
-function clearInNoteHighlights() { inNoteMarkers.forEach(m => m.clear()); inNoteMarkers = []; }
 function runInNoteSearch(query) {
-  clearInNoteHighlights(); inNoteMatches = []; inNoteCurrent = -1;
-  if (!cmEditor || !query) { document.getElementById('in-note-search-count').textContent = '-'; return; }
-  const content = cmEditor.getValue(), lower = content.toLowerCase(), q = query.toLowerCase();
+  inNoteMatches = []; inNoteCurrent = -1;
+  const textarea = document.getElementById('note-body');
+  if (!textarea || !query) { document.getElementById('in-note-search-count').textContent = '-'; return; }
+  const content = textarea.value, lower = content.toLowerCase(), q = query.toLowerCase();
   let idx = 0;
   while ((idx = lower.indexOf(q, idx)) !== -1) { inNoteMatches.push(idx); idx += q.length; }
-  inNoteMatches.forEach((pos, i) => {
-    const from = cmEditor.posFromIndex(pos), to = cmEditor.posFromIndex(pos + query.length);
-    inNoteMarkers.push(cmEditor.markText(from, to, { className: i === 0 ? 'cm-searching-current' : 'cm-searching' }));
-  });
-  if (inNoteMatches.length > 0) { inNoteCurrent = 0; scrollToMatch(0); }
+  if (inNoteMatches.length > 0) { inNoteCurrent = 0; scrollToMatch(0, query.length); }
   updateInNoteCount();
 }
-function scrollToMatch(idx) {
-  if (!cmEditor || !inNoteMatches.length) return;
-  inNoteMarkers.forEach((m, i) => {
-    const pos = m.find(); if (!pos) return; m.clear();
-    inNoteMarkers[i] = cmEditor.markText(pos.from, pos.to, { className: i === idx ? 'cm-searching-current' : 'cm-searching' });
-  });
-  cmEditor.scrollIntoView(cmEditor.posFromIndex(inNoteMatches[idx]), 100);
-  cmEditor.setCursor(cmEditor.posFromIndex(inNoteMatches[idx]));
+function scrollToMatch(idx, queryLen) {
+  const textarea = document.getElementById('note-body');
+  if (!textarea || !inNoteMatches.length) return;
+  const pos = inNoteMatches[idx];
+  textarea.setSelectionRange(pos, pos + (queryLen || 0));
+  textarea.focus();
 }
 function updateInNoteCount() { document.getElementById('in-note-search-count').textContent = inNoteMatches.length === 0 ? '없음' : `${inNoteCurrent+1}/${inNoteMatches.length}`; }
-function inNoteNext() { if (!inNoteMatches.length) return; inNoteCurrent = (inNoteCurrent+1)%inNoteMatches.length; scrollToMatch(inNoteCurrent); updateInNoteCount(); }
-function inNotePrev() { if (!inNoteMatches.length) return; inNoteCurrent = (inNoteCurrent-1+inNoteMatches.length)%inNoteMatches.length; scrollToMatch(inNoteCurrent); updateInNoteCount(); }
+function inNoteNext() {
+  if (!inNoteMatches.length) return;
+  const query = document.getElementById('in-note-search-input').value;
+  inNoteCurrent = (inNoteCurrent+1)%inNoteMatches.length;
+  scrollToMatch(inNoteCurrent, query.length);
+  updateInNoteCount();
+}
+function inNotePrev() {
+  if (!inNoteMatches.length) return;
+  const query = document.getElementById('in-note-search-input').value;
+  inNoteCurrent = (inNoteCurrent-1+inNoteMatches.length)%inNoteMatches.length;
+  scrollToMatch(inNoteCurrent, query.length);
+  updateInNoteCount();
+}
 document.getElementById('btn-in-note-search').addEventListener('click', openInNoteSearch);
 document.getElementById('btn-close-in-search').addEventListener('click', closeInNoteSearch);
 document.getElementById('btn-in-note-next').addEventListener('click', inNoteNext);
@@ -622,17 +625,43 @@ document.getElementById('in-note-search-input').addEventListener('keydown', e =>
   if (e.key === 'Escape') closeInNoteSearch();
 });
 
-// ── Google Apps Script 연동 데이터 관리 ──────────────────────
+// ── Firebase 초기화 ───────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyDxEPFHEF_Kb7xoZWe23syM_8Igrc4u-GQ",
+  authDomain: "my-memo-f7bfd.firebaseapp.com",
+  projectId: "my-memo-f7bfd",
+  storageBucket: "my-memo-f7bfd.firebasestorage.app",
+  messagingSenderId: "173366391454",
+  appId: "1:173366391454:web:8eea82f5e594d65a60c18f"
+};
+
+let db = null, auth = null, currentUser = null;
+
+try {
+  if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+  if (typeof firebase !== 'undefined') {
+    db = firebase.firestore();
+    auth = firebase.auth();
+    db.enablePersistence().catch(() => {});
+  }
+} catch (e) {
+  console.warn("Firebase 초기화 경고:", e);
+}
+
+// ── 앱 상태 ───────────────────────────────────────────────────
 const CAT_COLORS = ['#89b4fa','#cba6f7','#f38ba8','#a6e3a1','#f9e2af','#94e2d5','#fab387','#eba0ac'];
 let notes = [];
 let categories = [];
+let templates = [];
 let masterHash = null;
 let currentNote = null, currentFilter = 'all', currentCat = null;
 let sortMode = 'updated', searchQuery = '', selectedColor = CAT_COLORS[0];
 let editingCatId = null, hiddenVisible = false;
 let driveLoadDone = false;
-let isSavingToDrive = false, pendingDriveSave = false;
-let lastSavedJson = null, saveDebounceTimer = null;
+let saveDebounceTimer = null;
+let pendingSaves = new Set();
 const unlockedSet = new Set();
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
@@ -647,7 +676,7 @@ function fmtDate(ts) {
   return d.toLocaleDateString('ko',{month:'short',day:'numeric'});
 }
 function showToast(msg, duration=2200) {
-  const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+  const t = document.getElementById('toast'); if(!t) return; t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), duration);
 }
 async function hashStr(str) {
@@ -660,22 +689,76 @@ function setSaveStatus(state, msg='') {
   el.className = state; el.textContent = msg;
 }
 
-// ── GAS 템플릿 엔진으로 데이터 즉시 주입 ──
+// ── 앱 시작 ───────────────────────────────────────────────────
+// ── 로그인 ────────────────────────────────────────────────────
+document.getElementById('btn-google-login').addEventListener('click', () => {
+  if (!auth) return;
+  const provider = new firebase.auth.GoogleAuthProvider();
+  document.getElementById('login-spinner').style.display = 'block';
+  document.getElementById('btn-google-login').style.display = 'none';
+  document.getElementById('login-msg').textContent = '로그인 중...';
+  auth.signInWithPopup(provider).catch(err => {
+    document.getElementById('login-spinner').style.display = 'none';
+    document.getElementById('btn-google-login').style.display = 'block';
+    document.getElementById('login-msg').textContent = '로그인 실패. 다시 시도해주세요.';
+  });
+});
+
 window.onload = () => {
-  initCM();
-  
+  if (!auth) { loadLocalAndRender(); return; }
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      currentUser = user;
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('drive-label').textContent = user.displayName || user.email;
+      document.getElementById('drive-icon').textContent = '🔥';
+      loadFromFirebase();
+    } else {
+      currentUser = null;
+      document.getElementById('login-screen').style.display = 'flex';
+      document.getElementById('login-spinner').style.display = 'none';
+      document.getElementById('btn-google-login').style.display = 'block';
+      document.getElementById('login-msg').textContent = '구글 계정으로 로그인하세요';
+    }
+  });
+};
+
+// ── Firebase 불러오기 ─────────────────────────────────────────
+async function loadFromFirebase() {
+  setSaveStatus('saving', '☁️ 불러오는 중...');
+  if (!db) { loadFromGAS(); return; }
+
   try {
-    // 서버 측에서 HTML을 그릴 때 미리 구글 드라이브 데이터를 끼워 넣습니다 (로딩 지연 없음)
-    const serverDataStr = <?!= JSON.stringify(serverData || {"notes":[],"categories":[],"masterHash":null}) ?>;
-    const data = typeof serverDataStr === 'string' ? JSON.parse(serverDataStr) : serverDataStr;
-    
-    if (Array.isArray(data.notes)) notes = data.notes;
-    if (Array.isArray(data.categories) && data.categories.length) categories = data.categories;
-    if (data.masterHash) masterHash = data.masterHash;
-    if (Array.isArray(data.templates)) templates = data.templates;
-    lastSavedJson = JSON.stringify(data);
-  } catch(e) { console.error("데이터 파싱 오류", e); }
-  
+    // 메타 (카테고리, 템플릿, masterHash)
+    if (!currentUser) return;
+    const uid = currentUser.uid;
+    const metaDoc = await db.collection('users').doc(uid).get();
+    if (metaDoc.exists) {
+      const meta = metaDoc.data();
+      if (Array.isArray(meta.categories) && meta.categories.length) categories = meta.categories;
+      if (meta.masterHash) masterHash = meta.masterHash;
+      if (Array.isArray(meta.templates)) templates = meta.templates;
+    }
+
+    // 메모 목록
+    const notesSnap = await db.collection('users').doc(uid).collection('notes').get();
+    if (!notesSnap.empty) {
+      notes = notesSnap.docs.map(d => d.data());
+      notes.sort((a, b) => b.updated - a.updated);
+      // 로컬에도 캐시
+      try { localStorage.setItem('memo_app_data', JSON.stringify({notes, categories, masterHash, templates})); } catch(e) {}
+      setSaveStatus('saved', '✓ 동기화됨');
+      setTimeout(() => setSaveStatus('idle', ''), 3000);
+    } else {
+      // Firebase 비어있으면 로컬에서 불러와서 업로드
+      await loadFromGASAndUpload();
+      return;
+    }
+  } catch(e) {
+    console.warn('Firebase 불러오기 실패:', e);
+    loadLocalAndRender();
+  }
+
   if (!categories.length) {
     categories = [
       { id: uid(), name: '업무', color: '#89b4fa' },
@@ -685,36 +768,94 @@ window.onload = () => {
   }
   driveLoadDone = true;
   renderAll();
-};
-
-// ── GAS 백엔드로 데이터 저장하기 ──
-function saveToDriveQueued() {
-  if (!driveLoadDone) return;
-  const currentJson = JSON.stringify({notes, categories, masterHash, templates});
-  if (currentJson === lastSavedJson) return;
-  if (isSavingToDrive) { pendingDriveSave = true; return; }
-  
-  isSavingToDrive = true; 
-  setSaveStatus('saving','☁️ 저장 중...');
-
-  google.script.run
-    .withSuccessHandler(function() {
-      lastSavedJson = currentJson;
-      setSaveStatus('saved','✓ 저장됨');
-      setTimeout(()=>setSaveStatus('idle',''),3000);
-      isSavingToDrive = false;
-      if (pendingDriveSave) { pendingDriveSave = false; saveToDriveQueued(); }
-    })
-    .withFailureHandler(function(error) {
-      setSaveStatus('error','⚠️ 저장 실패');
-      showToast('저장 오류: ' + error.message);
-      isSavingToDrive = false;
-      if (pendingDriveSave) { pendingDriveSave = false; saveToDriveQueued(); }
-    })
-    .saveDataToDrive(currentJson);
 }
 
-function save() { saveToDriveQueued(); }
+function loadLocalAndRender() {
+  // 로컬스토리지에서 캐시된 데이터 불러오기
+  try {
+    const localStr = localStorage.getItem('memo_app_data');
+    if (localStr) {
+      const data = JSON.parse(localStr);
+      if (Array.isArray(data.notes) && data.notes.length) notes = data.notes;
+      if (Array.isArray(data.categories) && data.categories.length) categories = data.categories;
+      if (data.masterHash) masterHash = data.masterHash;
+      if (Array.isArray(data.templates)) templates = data.templates;
+    }
+  } catch(e) {}
+  if (!categories.length) {
+    categories = [
+      { id: uid(), name: '업무', color: '#89b4fa' },
+      { id: uid(), name: '개인', color: '#cba6f7' },
+      { id: uid(), name: '아이디어', color: '#a6e3a1' },
+    ];
+  }
+  driveLoadDone = true;
+  renderAll();
+}
+// GAS 호환성 별칭
+function loadFromGAS() { loadLocalAndRender(); }
+
+async function loadFromGASAndUpload() {
+  loadLocalAndRender();
+  if (notes.length > 0 && db) {
+    showToast('☁️ 기존 메모를 Firebase에 저장 중...');
+    setSaveStatus('saving', '☁️ 업로드 중...');
+    await saveMetaToFirebase();
+    for (const note of notes) await saveNoteToFirebase(note);
+    setSaveStatus('saved', '✓ 업로드 완료');
+    setTimeout(() => setSaveStatus('idle', ''), 3000);
+    showToast('✅ Firebase 업로드 완료!');
+    document.getElementById('drive-label').textContent = '🔥 Firebase 동기화됨';
+  }
+}
+
+// ── Firebase 저장 (메모 하나씩) ───────────────────────────────
+async function saveNoteToFirebase(note) {
+  if (!db) return;
+  if (!currentUser) return;
+  try {
+    await db.collection('users').doc(currentUser.uid).collection('notes').doc(note.id).set(note);
+  } catch(e) { console.warn('메모 저장 실패:', e); }
+}
+
+async function saveMetaToFirebase() {
+  if (!db) return;
+  if (!currentUser) return;
+  try {
+    await db.collection('users').doc(currentUser.uid).set({
+      categories, masterHash: masterHash || null, templates, updatedAt: Date.now()
+    }, { merge: true });
+  } catch(e) { console.warn('메타 저장 실패:', e); }
+}
+
+async function deleteNoteFromFirebase(noteId) {
+  if (!db) return;
+  try {
+    if (!currentUser) return;
+    await db.collection('users').doc(currentUser.uid).collection('notes').doc(noteId).delete();
+  } catch(e) {}
+}
+
+// ── 저장 메인 함수 ────────────────────────────────────────────
+function save() {
+  // 로컬 즉시 저장
+  try { localStorage.setItem('memo_app_data', JSON.stringify({notes, categories, masterHash, templates})); } catch(e) {}
+  clearTimeout(saveDebounceTimer);
+  saveDebounceTimer = setTimeout(async () => {
+    setSaveStatus('saving', '☁️ 저장 중...');
+    await saveMetaToFirebase();
+    for (const noteId of pendingSaves) {
+      const note = notes.find(n => n.id === noteId);
+      if (note) await saveNoteToFirebase(note);
+    }
+    pendingSaves.clear();
+    setSaveStatus('saved', '✓ 저장됨');
+    setTimeout(() => setSaveStatus('idle', ''), 3000);
+  }, 2000);
+}
+
+function saveToDriveQueued() { save(); }
+function uid_fn() { return uid(); }
 
 // ── 렌더링 ───────────────────────────────────────────────────
 function renderCategories() {
@@ -774,8 +915,10 @@ function renderNoteList() {
     const cat=categories.find(c=>c.id===note.cat);
     const div=document.createElement('div');
     div.className='note-card'+(currentNote?.id===note.id?' active':'')+(note.locked?' locked-card':'')+(note.hidden?' hidden-card':'');
+    div.setAttribute('data-id', note.id);
+    const previewBody = (note.body || '').length > 150 ? (note.body || '').slice(0, 150) : (note.body || '');
     div.innerHTML=`<div class="note-card-title">${note.locked?'🔒 ':''}${highlight(note.title||'제목 없음',q)}</div>
-      <div class="note-card-preview">${note.locked?'<span style="color:#aaa;font-style:italic">비밀번호로 잠겨있습니다</span>':highlight(note.body,q).replace(/\n/g,' ')}</div>
+      <div class="note-card-preview">${note.locked?'<span style="color:#aaa;font-style:italic">비밀번호로 잠겨있습니다</span>':highlight(previewBody,q).replace(/\n/g,' ')}</div>
       <div class="note-card-meta">
         ${cat?`<span class="tag-chip" style="background:${cat.color}22;color:${cat.color}">${escHtml(cat.name)}</span>`:''}
         ${(!note.locked?(note.tags||[]):[]).map(t=>`<span class="tag-chip" style="background:${cat?.color||'#eee'}22;color:${cat?.color||'#888'}">#${escHtml(t)}</span>`).join('')}
@@ -790,8 +933,10 @@ function renderNoteList() {
     div.querySelector('.note-card-del').addEventListener('click', e=>{
       e.stopPropagation();
       if(confirm('이 메모를 삭제할까요?')){
+        const delId = note.id;
         notes=notes.filter(n=>n.id!==note.id);
         if(currentNote?.id===note.id){currentNote=null;showEditorState('none');}
+        deleteNoteFromFirebase(delId); // Firebase에서도 삭제
         save();renderAll();
       }
     });
@@ -815,7 +960,6 @@ function showEditorState(state) {
   const ea=document.getElementById('editor-area');
   ea.style.display=state==='editor'?'flex':'none';
   ea.style.flexDirection='column'; ea.style.flex='1'; ea.style.overflow='hidden';
-  if(state==='editor'&&cmEditor) setTimeout(()=>cmEditor.refresh(),10);
   if(state!=='editor') closeInNoteSearch();
   setTimeout(updateScrollBtns, 60);
 }
@@ -835,8 +979,12 @@ function updateLockHideButtons(){
 }
 
 async function openNote(id){
+  flushCurrentNoteData();
   const note=notes.find(n=>n.id===id); if(!note)return;
-  currentNote=note; closeInNoteSearch(); renderNoteList();
+  currentNote=note; isDirty=false; closeInNoteSearch();
+  document.querySelectorAll('.note-card').forEach(c=>c.classList.remove('active'));
+  const targetCard = document.querySelector(`.note-card[data-id="${note.id}"]`);
+  if(targetCard) targetCard.classList.add('active');
   if(note.locked&&!unlockedSet.has(note.id)){
     showEditorState('locked');
     document.getElementById('unlock-input').value=''; document.getElementById('unlock-err').textContent='';
@@ -849,7 +997,10 @@ async function openNote(id){
   document.getElementById('note-starred').checked=!!note.starred;
   document.getElementById('note-date').textContent='수정: '+fmtDate(note.updated);
   setSaveStatus('idle',''); renderTags(note.tags||[]); updateCatSelect(); updateLockHideButtons();
-  setTimeout(()=>cmEditor&&cmEditor.focus(),50);
+  setTimeout(() => {
+    const el = document.getElementById('note-body');
+    if (el) el.focus();
+  }, 50);
 }
 
 document.getElementById('btn-unlock').addEventListener('click', async()=>{
@@ -868,15 +1019,16 @@ function renderTags(tags){
 
 function saveCurrentNote(silent = false){
   if(!currentNote)return;
-  currentNote.title=document.getElementById('note-title').value.trim();
-  currentNote.body=getCMText(); currentNote.cat=document.getElementById('note-cat').value;
-  currentNote.starred=document.getElementById('note-starred').checked; currentNote.updated=Date.now();
+  isDirty = true;
+  flushCurrentNoteData();
+  currentNote.cat=document.getElementById('note-cat').value;
+  currentNote.starred=document.getElementById('note-starred').checked;
   const idx=notes.findIndex(n=>n.id===currentNote.id);
   if(idx>=0)notes[idx]=currentNote;else notes.unshift(currentNote);
+  pendingSaves.add(currentNote.id); // 이 메모 저장 대기 등록
   save();
   document.getElementById('note-date').textContent='수정: '+fmtDate(currentNote.updated);
   if (!silent) renderAll();
-  else renderNoteList();
 }
 
 function newNote(){
@@ -904,7 +1056,7 @@ document.getElementById('note-title').addEventListener('input', () => {
   if (!currentNote) return;
   setSaveStatus('idle', '✏️ 편집 중...');
   clearTimeout(titleAutoSaveTimer);
-  titleAutoSaveTimer = setTimeout(() => saveCurrentNote(true), 1500);
+  titleAutoSaveTimer = setTimeout(() => saveCurrentNote(true), 3000);
 });
 document.getElementById('note-cat').addEventListener('change', () => { if (currentNote) saveCurrentNote(); });
 document.getElementById('note-starred').addEventListener('change', () => { if (currentNote) saveCurrentNote(); });
@@ -1041,54 +1193,29 @@ document.getElementById('cat-modal').addEventListener('click',e=>{if(e.target===
 
 // ── 체크리스트 ───────────────────────────────────────────────
 document.getElementById('btn-checklist').addEventListener('click', () => {
-  if (!cmEditor) return;
-  const cursor = cmEditor.getCursor();
-  const lineContent = cmEditor.getLine(cursor.line);
-  const trimmed = lineContent.trimStart();
+  const textarea = document.getElementById('note-body');
+  if (!textarea) return;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const val = textarea.value;
+  const lineStart = val.lastIndexOf('\n', start - 1) + 1;
+  let lineEnd = val.indexOf('\n', end);
+  if (lineEnd === -1) lineEnd = val.length;
+  const line = val.substring(lineStart, lineEnd);
+  const trimmed = line.trimStart();
+  let newLine = '';
   if (trimmed.startsWith('[ ] ') || trimmed.startsWith('[x] ')) {
     const isChecked = trimmed.startsWith('[x] ');
-    const newLine = isChecked ? lineContent.replace('[x] ', '[ ] ') : lineContent.replace('[ ] ', '[x] ');
-    cmEditor.replaceRange(newLine, {line: cursor.line, ch: 0}, {line: cursor.line, ch: lineContent.length});
+    newLine = isChecked ? line.replace('[x] ', '[ ] ') : line.replace('[ ] ', '[x] ');
   } else {
-    cmEditor.replaceRange('[ ] ', cursor);
-    cmEditor.setCursor({line: cursor.line, ch: cursor.ch + 4});
+    newLine = '[ ] ' + line;
   }
-  cmEditor.focus();
+  textarea.value = val.substring(0, lineStart) + newLine + val.substring(lineEnd);
+  textarea.setSelectionRange(lineStart + newLine.length, lineStart + newLine.length);
+  textarea.focus();
 });
-
-document.getElementById('cm-editor-wrap').addEventListener('click', e => {
-  if (!cmEditor) return;
-  const coords = cmEditor.coordsChar({left: e.clientX, top: e.clientY});
-  const line = cmEditor.getLine(coords.line);
-  if (!line) return;
-  const trimmed = line.trimStart();
-  if (trimmed.startsWith('[ ] ') || trimmed.startsWith('[x] ')) {
-    const indent = line.length - trimmed.length;
-    if (coords.ch <= indent + 4) {
-      const isChecked = trimmed.startsWith('[x] ');
-      const newLine = isChecked ? line.replace('[x] ', '[ ] ') : line.replace('[ ] ', '[x] ');
-      cmEditor.replaceRange(newLine, {line: coords.line, ch: 0}, {line: coords.line, ch: line.length});
-    }
-  }
-});
-
-function attachChecklistTyping() {
-  if (!cmEditor) return;
-  cmEditor.on('change', (editor, change) => {
-    if (change.origin === 'setValue' || change.origin === '+checklist') return;
-    const cursor = editor.getCursor();
-    const line = editor.getLine(cursor.line);
-    if (!line) return;
-    if (line === '[ ]' || line === '[x]') {
-      editor.replaceRange(' ', {line: cursor.line, ch: line.length}, {line: cursor.line, ch: line.length}, '+checklist');
-      editor.setCursor({line: cursor.line, ch: line.length + 1});
-    }
-  });
-}
-attachChecklistTyping();
 
 // ── 템플릿 ───────────────────────────────────────────────────
-// 템플릿은 브라우저 로컬 스토리지 유지 (선택사항이므로 기기 귀속)
 let templates = [];
 function saveTemplates() { saveToDriveQueued(); }
 
@@ -1110,11 +1237,12 @@ function renderTemplateList() {
       <button class="template-item-del" data-idx="${i}" title="삭제">🗑</button>`;
     div.addEventListener('click', e => {
       if (e.target.closest('.template-item-del')) return;
-      if (!cmEditor) return;
-      const current = cmEditor.getValue();
+      const el = document.getElementById('note-body');
+      if (!el) return;
+      const current = el.value;
       const insert = current ? current + '\n\n' + t.body : t.body;
-      cmEditor.setValue(insert);
-      cmEditor.scrollTo(0, 0);
+      el.value = insert;
+      el.scrollTop = 0;
       document.getElementById('template-modal').classList.remove('open');
       showToast('📋 템플릿이 적용됐어요!');
     });
@@ -1156,75 +1284,6 @@ document.getElementById('save-template-confirm').addEventListener('click', () =>
   showToast('💾 템플릿으로 저장됐어요!');
 });
 document.getElementById('template-name-input').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('save-template-confirm').click(); });
-
-(function() {
-  if (!isMobile()) return;
-  const wrap = document.getElementById('cm-editor-wrap');
-  wrap.style.position = 'relative';
-  const style = document.createElement('style');
-  style.textContent = '.CodeMirror-scroll { padding-right: 36px !important; }';
-  document.head.appendChild(style);
-
-  const bar = document.createElement('div');
-  bar.style.cssText = 'position:absolute;right:0;top:0;width:30px;height:100%;z-index:50;display:none;pointer-events:none;';
-  const thumb = document.createElement('div');
-  thumb.style.cssText = 'position:absolute;right:4px;width:22px;min-height:48px;background:rgba(137,180,250,0.85);border-radius:11px;touch-action:none;pointer-events:auto;box-shadow:0 1px 4px rgba(0,0,0,0.2);';
-  bar.appendChild(thumb);
-  wrap.appendChild(bar);
-
-  let dragging = false, startY = 0, startTop = 0;
-
-  function updateThumb() {
-    if (!cmEditor) return;
-    const si = cmEditor.getScrollInfo();
-    if (si.height <= si.clientHeight) { bar.style.display = 'none'; return; }
-    bar.style.display = 'block';
-    const trackH = wrap.clientHeight;
-    const thumbH = Math.max(48, (si.clientHeight / si.height) * trackH);
-    const maxTop = trackH - thumbH;
-    const top = (si.top / (si.height - si.clientHeight)) * maxTop;
-    thumb.style.height = thumbH + 'px';
-    thumb.style.top = Math.min(maxTop, Math.max(0, top)) + 'px';
-  }
-
-  function attachCM() {
-    if (!cmEditor) return;
-    cmEditor.on('scroll', updateThumb);
-    cmEditor.on('change', () => setTimeout(updateThumb, 50));
-    setTimeout(updateThumb, 100);
-  }
-
-  thumb.addEventListener('touchstart', e => {
-    dragging = true;
-    startY = e.touches[0].clientY;
-    startTop = parseFloat(thumb.style.top) || 0;
-    thumb.style.background = 'rgba(137,180,250,1)';
-    e.preventDefault();
-  }, { passive: false });
-
-  document.addEventListener('touchmove', e => {
-    if (!dragging || !cmEditor) return;
-    const si = cmEditor.getScrollInfo();
-    const dy = e.touches[0].clientY - startY;
-    const thumbH = parseFloat(thumb.style.height) || 48;
-    const maxTop = wrap.clientHeight - thumbH;
-    const newTop = Math.min(maxTop, Math.max(0, startTop + dy));
-    const ratio = maxTop > 0 ? newTop / maxTop : 0;
-    cmEditor.scrollTo(null, ratio * (si.height - si.clientHeight));
-    e.preventDefault();
-  }, { passive: false });
-
-  document.addEventListener('touchend', () => {
-    dragging = false;
-    thumb.style.background = 'rgba(137,180,250,0.85)';
-  });
-
-  new MutationObserver(() => {
-    const ea = document.getElementById('editor-area');
-    if (ea.style.display === 'flex') setTimeout(attachCM, 150);
-    else bar.style.display = 'none';
-  }).observe(document.getElementById('editor-area'), { attributes: true, attributeFilter: ['style'] });
-})();
 </script>
 </body>
 </html>
