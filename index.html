@@ -2,6 +2,13 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="내 메모장" />
+  <meta name="theme-color" content="#1e1e2e" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <title>내 메모장</title>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -1283,6 +1290,15 @@ document.getElementById('save-template-confirm').addEventListener('click', () =>
   showToast('💾 템플릿으로 저장됐어요!');
 });
 document.getElementById('template-name-input').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('save-template-confirm').click(); });
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./service-worker.js')
+        .then(reg => console.log('SW 등록:', reg.scope))
+        .catch(err => console.log('SW 실패:', err));
+    });
+  }
 </script>
 </body>
 </html>
