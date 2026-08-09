@@ -14,6 +14,10 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
+  <!-- CodeMirror 5 (가상화 렌더링 에디터) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -114,25 +118,20 @@
     .btn-icon-tool.active-lock { background: #fef3cd; border-color: #f9e2af; }
     .btn-icon-tool.active-hide { background: #f0e6ff; border-color: #cba6f7; }
 
-    /* 고속 Textarea 에디터 */
+    /* CodeMirror 5 초고속 가상화 에디터 */
     #cm-editor-wrap { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-height: 0; position: relative; }
-    #note-body {
-      flex: 1; width: 100%; height: 100%;
-      padding: 24px 28px;
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      font-size: 14.5px;
-      line-height: 1.75;
-      color: var(--text);
-      background: var(--editor-bg);
-      border: none;
-      outline: none;
-      resize: none;
-      contain: layout paint;
-      text-rendering: optimizeSpeed;
+    .CodeMirror {
+      flex: 1;
+      height: 100% !important;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+      font-size: 14.5px !important;
+      line-height: 1.75 !important;
+      color: var(--text) !important;
+      background: var(--editor-bg) !important;
+      border: none !important;
     }
-    #note-body::placeholder { color: #ccc; }
-    #note-body::-webkit-scrollbar { width: 6px; }
-    #note-body::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
+    .CodeMirror-lines { padding: 20px 24px !important; }
+    .CodeMirror-scroll { overflow-y: auto !important; }
 
     /* 메모 내 검색바 */
     #in-note-search-bar { display: none; align-items: center; gap: 8px; padding: 8px 20px; background: #f0f0eb; border-bottom: 1px solid var(--border); flex-shrink: 0; }
@@ -409,9 +408,7 @@
       </div>
       <button id="btn-close-in-search">✕</button>
     </div>
-    <div id="cm-editor-wrap">
-      <textarea id="note-body" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" data-gramm="false" data-enable-grammarly="false" placeholder="메모를 입력하세요..."></textarea>
-    </div>
+    <div id="cm-editor-wrap"></div>
   </div>
 </div>
 
@@ -520,12 +517,13 @@ function updateScrollBtns() {
 }
 
 document.getElementById('btn-scroll-top').addEventListener('click', () => {
-  const textarea = document.getElementById('note-body');
-  if (textarea) textarea.scrollTop = 0;
+  if (editor) editor.scrollTo(0, 0);
 });
 document.getElementById('btn-scroll-bot').addEventListener('click', () => {
-  const textarea = document.getElementById('note-body');
-  if (textarea) textarea.scrollTop = textarea.scrollHeight;
+  if (editor) {
+    const info = editor.getScrollInfo();
+    editor.scrollTo(0, info.height);
+  }
 });
 
 function showPanel(panel) {
@@ -542,17 +540,36 @@ document.getElementById('btn-editor-back').addEventListener('click', () => showP
 document.querySelectorAll('.nav-item').forEach(item => { item.addEventListener('click', () => { if (isMobile()) showPanel('list'); }); });
 document.getElementById('cat-list').addEventListener('click', () => { if (isMobile()) showPanel('list'); });
 
-// ── 고속 Textarea 에디터 관리 ──────────────────────────────────
+// ── CodeMirror 5 가상화 에디터 관리 ──────────────────────────────
+let editor = null;
+
+function initCodeMirror() {
+  const wrap = document.getElementById('cm-editor-wrap');
+  if (!wrap || editor) return;
+  wrap.innerHTML = '';
+  editor = CodeMirror(wrap, {
+    value: '',
+    mode: 'text/plain',
+    lineNumbers: false,
+    lineWrapping: true,
+    scrollbarStyle: 'native',
+    viewportMargin: 20
+  });
+
+  editor.on('change', () => {
+    if (currentNote) isDirty = true;
+  });
+}
+
 function getCMText() {
-  const el = document.getElementById('note-body');
-  return el ? el.value : '';
+  return editor ? editor.getValue() : '';
 }
 
 function setCMText(text) {
-  const el = document.getElementById('note-body');
-  if (!el) return;
-  el.value = text || '';
-  el.scrollTop = 0;
+  if (!editor) return;
+  editor.setValue(text || '');
+  editor.clearHistory();
+  editor.scrollTo(0, 0);
 }
 
 let isDirty = false;
@@ -561,8 +578,7 @@ let editingStatusTimer = null;
 
 function flushCurrentNoteData() {
   if (currentNote && isDirty) {
-    const bodyEl = document.getElementById('note-body');
-    if (bodyEl) currentNote.body = bodyEl.value;
+    currentNote.body = getCMText();
     const titleEl = document.getElementById('note-title');
     if (titleEl) currentNote.title = titleEl.value.trim();
     currentNote.updated = Date.now();
@@ -725,6 +741,7 @@ document.getElementById('btn-google-login').addEventListener('click', () => {
 });
 
 window.onload = () => {
+  initCodeMirror();
   // 1단계: 로컬 캐시 즉시 화면 표시 (0.01초 초고속 렌더링)
   loadLocalAndRender();
 
