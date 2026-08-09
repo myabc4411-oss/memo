@@ -768,28 +768,26 @@ window.doGoogleLogin = async function() {
   if (msg) msg.textContent = '구글 로그인 팝업 창을 확인하세요...';
 
   try {
-    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    await auth.setPersistence('local'); // v9 호환 안전한 문자열 방식
     const result = await auth.signInWithPopup(provider);
     onLoginSuccess(result.user);
   } catch (err) {
-    console.warn("Popup 로그인 실패/차단 - Redirect 로그인 시도:", err);
+    console.error("로그인 에러:", err);
+    if (spinner) spinner.style.display = 'none';
+    if (btn) btn.style.display = 'block';
+    
     if (err.code === 'auth/unauthorized-domain') {
-      if (spinner) spinner.style.display = 'none';
-      if (btn) btn.style.display = 'block';
       if (msg) {
-        msg.innerHTML = `<span style="color:#f38ba8;font-weight:bold;">⚠️ Firebase 승인 도메인 등록 필요</span><br><small style="font-size:12px;color:#cdd6f4;">Firebase 콘솔 ➔ Authentication ➔ 설정 ➔ 승인된 도메인에<br><b style="color:#89b4fa;">myabc4411-oss.github.io</b> 등록이 필수입니다!</small>`;
+        msg.innerHTML = `<span style="color:#f38ba8;font-weight:bold;">⚠️ Firebase 승인 도메인 등록 필요</span><br><small style="font-size:12px;color:#cdd6f4;">Firebase 콘솔 ➔ Authentication ➔ 설정 ➔ 승인된 도메인에<br><b style="color:#89b4fa;">${window.location.hostname}</b> 등록이 필수입니다!</small>`;
       }
-      return;
-    }
-    // 팝업이 차단되거나 모바일 환경인 경우 Redirect 방식으로 자동 이중전환
-    try {
-      if (msg) msg.textContent = '리다이렉트 로그인으로 전환 중...';
-      await auth.signInWithRedirect(provider);
-    } catch (err2) {
-      console.error("Firebase Login Error:", err2);
-      if (spinner) spinner.style.display = 'none';
-      if (btn) btn.style.display = 'block';
-      if (msg) msg.textContent = '로그인 오류 (' + (err2.code || 'ERR') + '): ' + (err2.message || err2);
+    } else if (err.code === 'auth/popup-blocked') {
+      alert('브라우저에서 팝업이 차단되었습니다. 팝업 차단을 해제하고 다시 시도해주세요.');
+      if (msg) msg.textContent = '팝업 차단을 해제해주세요.';
+    } else if (err.code === 'auth/popup-closed-by-user') {
+      if (msg) msg.textContent = '로그인 창이 닫혔습니다. 다시 시도해주세요.';
+    } else {
+      alert('로그인 중 오류가 발생했습니다: ' + (err.message || err));
+      if (msg) msg.textContent = '로그인 오류 발생';
     }
   }
 };
