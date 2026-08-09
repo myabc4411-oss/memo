@@ -565,7 +565,13 @@ function initCodeMirror() {
   });
 
   editor.on('change', () => {
-    if (currentNote) isDirty = true;
+    if (!currentNote) return;
+    isDirty = true;
+    setSaveStatus('idle', '✏️ 편집 중...');
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(() => {
+      saveCurrentNote(true); // silent: 화면 재렌더링 없이 저장
+    }, 3000);
   });
 }
 
@@ -1284,7 +1290,11 @@ document.addEventListener('keydown',e=>{
 
 const noteTitleEl = document.getElementById('note-title');
 noteTitleEl.addEventListener('input', () => {
-  if (currentNote) isDirty = true;
+  if (!currentNote) return;
+  isDirty = true;
+  setSaveStatus('idle', '✏️ 편집 중...');
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(() => saveCurrentNote(true), 3000);
 });
 document.getElementById('note-cat').addEventListener('change', () => { if (currentNote) saveCurrentNote(); });
 document.getElementById('note-starred').addEventListener('change', () => { if (currentNote) saveCurrentNote(); });
