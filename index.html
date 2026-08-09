@@ -407,7 +407,7 @@
       <button id="btn-close-in-search">✕</button>
     </div>
     <div id="cm-editor-wrap">
-      <textarea id="note-body" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="메모를 입력하세요..."></textarea>
+      <textarea id="note-body" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" data-gramm="false" data-enable-grammarly="false" placeholder="메모를 입력하세요..."></textarea>
     </div>
   </div>
 </div>
@@ -582,25 +582,41 @@ function updateActiveCardUI() {
   if (dateEl) dateEl.textContent = fmtDate(currentNote.updated);
 }
 
-let updateCardTimer = null;
-document.getElementById('note-body').addEventListener('input', () => {
+// ── 타자 렉 0% 극대화: 입력 시 JS 연산을 100% 비동기로 연기 ──
+const noteBodyEl = document.getElementById('note-body');
+let typingStopTimer = null;
+
+noteBodyEl.addEventListener('input', () => {
   if (!currentNote) return;
   isDirty = true;
-  currentNote.body = document.getElementById('note-body').value;
-  currentNote.updated = Date.now();
-  
-  clearTimeout(updateCardTimer);
-  updateCardTimer = setTimeout(updateActiveCardUI, 400);
 
-  clearTimeout(editingStatusTimer);
-  editingStatusTimer = setTimeout(() => { setSaveStatus('idle', '✏️ 편집 중...'); }, 300);
+  clearTimeout(typingStopTimer);
+  typingStopTimer = setTimeout(() => {
+    if (currentNote && isDirty) {
+      currentNote.body = noteBodyEl.value;
+      currentNote.updated = Date.now();
+      updateActiveCardUI();
+      setSaveStatus('idle', '✏️ 편집 중...');
+    }
+  }, 1000);
 
   clearTimeout(autoSaveTimer);
   autoSaveTimer = setTimeout(() => {
     flushCurrentNoteData();
     pendingSaves.add(currentNote.id);
     save();
-  }, 3000);
+  }, 5000);
+});
+
+noteBodyEl.addEventListener('blur', () => {
+  if (currentNote && isDirty) {
+    currentNote.body = noteBodyEl.value;
+    currentNote.updated = Date.now();
+    updateActiveCardUI();
+    flushCurrentNoteData();
+    pendingSaves.add(currentNote.id);
+    save();
+  }
 });
 
 // ── 메모 내 검색 ─────────────────────────────────────────────
@@ -1134,23 +1150,40 @@ document.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();clearTimeout(saveDebounceTimer);saveDebounceTimer=setTimeout(()=>saveCurrentNote(),300);}
 });
 
-let titleAutoSaveTimer = null;
-document.getElementById('note-title').addEventListener('input', () => {
+const noteTitleEl = document.getElementById('note-title');
+let titleTypingStopTimer = null;
+
+noteTitleEl.addEventListener('input', () => {
   if (!currentNote) return;
   isDirty = true;
-  currentNote.title = document.getElementById('note-title').value.trim();
-  currentNote.updated = Date.now();
-  updateActiveCardUI();
 
-  clearTimeout(editingStatusTimer);
-  editingStatusTimer = setTimeout(() => { setSaveStatus('idle', '✏️ 편집 중...'); }, 200);
+  clearTimeout(titleTypingStopTimer);
+  titleTypingStopTimer = setTimeout(() => {
+    if (currentNote && isDirty) {
+      currentNote.title = noteTitleEl.value.trim();
+      currentNote.updated = Date.now();
+      updateActiveCardUI();
+      setSaveStatus('idle', '✏️ 편집 중...');
+    }
+  }, 1000);
 
   clearTimeout(titleAutoSaveTimer);
   titleAutoSaveTimer = setTimeout(() => {
     flushCurrentNoteData();
     pendingSaves.add(currentNote.id);
     save();
-  }, 2500);
+  }, 5000);
+});
+
+noteTitleEl.addEventListener('blur', () => {
+  if (currentNote && isDirty) {
+    currentNote.title = noteTitleEl.value.trim();
+    currentNote.updated = Date.now();
+    updateActiveCardUI();
+    flushCurrentNoteData();
+    pendingSaves.add(currentNote.id);
+    save();
+  }
 });
 document.getElementById('note-cat').addEventListener('change', () => { if (currentNote) saveCurrentNote(); });
 document.getElementById('note-starred').addEventListener('change', () => { if (currentNote) saveCurrentNote(); });
