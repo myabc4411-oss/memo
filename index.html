@@ -489,42 +489,44 @@
 <script>
 // ── 모바일 여부 및 UI 로직 ──────────────────────────────────────────────
 function isMobile() { return window.innerWidth <= 768; }
+function addEv(id, event, fn) {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener(event, fn);
+}
 
 if (window.visualViewport) {
   window.visualViewport.addEventListener('resize', () => {
     if (!isMobile()) {
-      document.getElementById('editor-panel').style.height = '';
+      const p = document.getElementById('editor-panel');
+      if (p) p.style.height = '';
       return;
     }
     const editorWrap = document.getElementById('cm-editor-wrap');
     if (!editorWrap) return;
-    document.getElementById('editor-panel').style.height = (window.visualViewport.height) + 'px';
+    const p = document.getElementById('editor-panel');
+    if (p) p.style.height = (window.visualViewport.height) + 'px';
   });
 }
 
 window.addEventListener('resize', () => {
   if (!isMobile()) {
-    document.getElementById('editor-panel').style.height = '';
+    const p = document.getElementById('editor-panel');
+    if (p) p.style.height = '';
   }
 });
 
 function updateScrollBtns() {
   const btns = document.getElementById('scroll-btns');
-  const editorShown = document.getElementById('editor-area').style.display === 'flex';
+  if (!btns) return;
+  const area = document.getElementById('editor-area');
+  const editorShown = area && area.style.display === 'flex';
   const onEditorPanel = !isMobile() || document.body.classList.contains('show-editor');
   if (editorShown && onEditorPanel) btns.classList.add('visible');
   else btns.classList.remove('visible');
 }
 
-document.getElementById('btn-scroll-top').addEventListener('click', () => {
-  if (editor) editor.scrollTo(0, 0);
-});
-document.getElementById('btn-scroll-bot').addEventListener('click', () => {
-  if (editor) {
-    const info = editor.getScrollInfo();
-    editor.scrollTo(0, info.height);
-  }
-});
+addEv('btn-scroll-top', 'click', () => { if (editor) editor.scrollTo(0, 0); });
+addEv('btn-scroll-bot', 'click', () => { if (editor) { const info = editor.getScrollInfo(); editor.scrollTo(0, info.height); } });
 
 function showPanel(panel) {
   if (!isMobile()) return;
@@ -534,11 +536,11 @@ function showPanel(panel) {
   setTimeout(updateScrollBtns, 50);
 }
 
-document.getElementById('btn-sidebar-to-list').addEventListener('click', () => showPanel('list'));
-document.getElementById('btn-list-back').addEventListener('click', () => showPanel('sidebar'));
-document.getElementById('btn-editor-back').addEventListener('click', () => showPanel('list'));
+addEv('btn-sidebar-to-list', 'click', () => showPanel('list'));
+addEv('btn-list-back', 'click', () => showPanel('sidebar'));
+addEv('btn-editor-back', 'click', () => showPanel('list'));
 document.querySelectorAll('.nav-item').forEach(item => { item.addEventListener('click', () => { if (isMobile()) showPanel('list'); }); });
-document.getElementById('cat-list').addEventListener('click', () => { if (isMobile()) showPanel('list'); });
+addEv('cat-list', 'click', () => { if (isMobile()) showPanel('list'); });
 
 // ── CodeMirror 5 가상화 에디터 관리 ──────────────────────────────
 let editor = null;
@@ -652,12 +654,12 @@ function inNotePrev() {
   scrollToMatch(inNoteCurrent, query.length);
   updateInNoteCount();
 }
-document.getElementById('btn-in-note-search').addEventListener('click', openInNoteSearch);
-document.getElementById('btn-close-in-search').addEventListener('click', closeInNoteSearch);
-document.getElementById('btn-in-note-next').addEventListener('click', inNoteNext);
-document.getElementById('btn-in-note-prev').addEventListener('click', inNotePrev);
-document.getElementById('in-note-search-input').addEventListener('input', e => runInNoteSearch(e.target.value));
-document.getElementById('in-note-search-input').addEventListener('keydown', e => {
+addEv('btn-in-note-search', 'click', openInNoteSearch);
+addEv('btn-close-in-search', 'click', closeInNoteSearch);
+addEv('btn-in-note-next', 'click', inNoteNext);
+addEv('btn-in-note-prev', 'click', inNotePrev);
+addEv('in-note-search-input', 'input', e => runInNoteSearch(e.target.value));
+addEv('in-note-search-input', 'keydown', e => {
   if (e.key === 'Enter') { e.shiftKey ? inNotePrev() : inNoteNext(); }
   if (e.key === 'Escape') closeInNoteSearch();
 });
@@ -727,38 +729,46 @@ function setSaveStatus(state, msg='') {
 
 // ── 앱 시작 ───────────────────────────────────────────────────
 // ── 로그인 ────────────────────────────────────────────────────
-document.getElementById('btn-google-login').addEventListener('click', async () => {
+addEv('btn-google-login', 'click', async () => {
   if (!auth) {
-    alert('Firebase Auth가 로드되지 않았습니다. 페이지를 새로고침 해주세요.');
+    alert('Firebase Auth 모듈이 초기화되는 중입니다. 1~2초 후 다시 눌러주세요.');
     return;
   }
   const provider = new firebase.auth.GoogleAuthProvider();
-  document.getElementById('login-spinner').style.display = 'block';
-  document.getElementById('btn-google-login').style.display = 'none';
-  document.getElementById('login-msg').textContent = '구글 로그인 팝업 창을 확인하세요...';
+  const spinner = document.getElementById('login-spinner');
+  const btn = document.getElementById('btn-google-login');
+  const msg = document.getElementById('login-msg');
+  if (spinner) spinner.style.display = 'block';
+  if (btn) btn.style.display = 'none';
+  if (msg) msg.textContent = '구글 로그인 팝업 창을 확인하세요...';
 
   try {
     await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
     const result = await auth.signInWithPopup(provider);
     currentUser = result.user;
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('drive-label').textContent = currentUser.displayName || currentUser.email;
-    document.getElementById('drive-icon').textContent = '🔥';
+    const screen = document.getElementById('login-screen');
+    if (screen) screen.style.display = 'none';
+    const label = document.getElementById('drive-label');
+    if (label) label.textContent = currentUser.displayName || currentUser.email;
+    const icon = document.getElementById('drive-icon');
+    if (icon) icon.textContent = '🔥';
     showToast('🔥 구글 로그인 성공! 데이터를 동기화합니다...');
     await syncWithFirebase();
   } catch (err) {
     console.error("Firebase Login Error:", err);
-    document.getElementById('login-spinner').style.display = 'none';
-    document.getElementById('btn-google-login').style.display = 'block';
+    if (spinner) spinner.style.display = 'none';
+    if (btn) btn.style.display = 'block';
     
-    if (err.code === 'auth/unauthorized-domain') {
-      document.getElementById('login-msg').innerHTML = `<span style="color:#f38ba8;font-weight:bold;">⚠️ Firebase 승인 도메인 등록 필요</span><br><small style="font-size:12px;color:#cdd6f4;">Firebase 콘솔 ➔ Authentication ➔ 설정 ➔ 승인된 도메인에<br><b style="color:#89b4fa;">myabc4411-oss.github.io</b> 등록이 필요합니다!</small>`;
-    } else if (err.code === 'auth/popup-blocked') {
-      document.getElementById('login-msg').textContent = '⚠️ 브라우저 팝업이 차단되었습니다. 주소창 옆 팝업 차단을 해제해 주세요!';
-    } else if (err.code === 'auth/popup-closed-by-user') {
-      document.getElementById('login-msg').textContent = '구글 로그인 창이 닫혔습니다. 버튼을 다시 눌러주세요.';
-    } else {
-      document.getElementById('login-msg').textContent = '로그인 오류 (' + (err.code || 'ERR') + '): ' + (err.message || err);
+    if (msg) {
+      if (err.code === 'auth/unauthorized-domain') {
+        msg.innerHTML = `<span style="color:#f38ba8;font-weight:bold;">⚠️ Firebase 승인 도메인 등록 필요</span><br><small style="font-size:12px;color:#cdd6f4;">Firebase 콘솔 ➔ Authentication ➔ 설정 ➔ 승인된 도메인에<br><b style="color:#89b4fa;">myabc4411-oss.github.io</b> 등록이 필요합니다!</small>`;
+      } else if (err.code === 'auth/popup-blocked') {
+        msg.textContent = '⚠️ 브라우저 팝업이 차단되었습니다. 주소창 옆 팝업 차단을 해제해 주세요!';
+      } else if (err.code === 'auth/popup-closed-by-user') {
+        msg.textContent = '구글 로그인 창이 닫혔습니다. 버튼을 다시 눌러주세요.';
+      } else {
+        msg.textContent = '로그인 오류 (' + (err.code || 'ERR') + '): ' + (err.message || err);
+      }
     }
   }
 });
