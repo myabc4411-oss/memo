@@ -582,22 +582,25 @@ function updateActiveCardUI() {
   if (dateEl) dateEl.textContent = fmtDate(currentNote.updated);
 }
 
+let updateCardTimer = null;
 document.getElementById('note-body').addEventListener('input', () => {
   if (!currentNote) return;
   isDirty = true;
   currentNote.body = document.getElementById('note-body').value;
   currentNote.updated = Date.now();
-  updateActiveCardUI();
   
+  clearTimeout(updateCardTimer);
+  updateCardTimer = setTimeout(updateActiveCardUI, 400);
+
   clearTimeout(editingStatusTimer);
-  editingStatusTimer = setTimeout(() => { setSaveStatus('idle', '✏️ 편집 중...'); }, 200);
+  editingStatusTimer = setTimeout(() => { setSaveStatus('idle', '✏️ 편집 중...'); }, 300);
 
   clearTimeout(autoSaveTimer);
   autoSaveTimer = setTimeout(() => {
     flushCurrentNoteData();
     pendingSaves.add(currentNote.id);
     save();
-  }, 2500);
+  }, 3000);
 });
 
 // ── 메모 내 검색 ─────────────────────────────────────────────
@@ -674,7 +677,6 @@ try {
   if (typeof firebase !== 'undefined') {
     db = firebase.firestore();
     auth = firebase.auth();
-    db.enablePersistence().catch(() => {});
   }
 } catch (e) {
   console.warn("Firebase 초기화 경고:", e);
@@ -871,8 +873,15 @@ let localSaveDebounceTimer = null;
 function saveLocalDebounced() {
   clearTimeout(localSaveDebounceTimer);
   localSaveDebounceTimer = setTimeout(() => {
-    try { localStorage.setItem('memo_app_data', JSON.stringify({notes, categories, masterHash, templates})); } catch(e) {}
-  }, 2500);
+    const doSave = () => {
+      try { localStorage.setItem('memo_app_data', JSON.stringify({notes, categories, masterHash, templates})); } catch(e) {}
+    };
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(doSave);
+    } else {
+      setTimeout(doSave, 0);
+    }
+  }, 4000);
 }
 
 function save() {
@@ -888,7 +897,7 @@ function save() {
     pendingSaves.clear();
     setSaveStatus('saved', '✓ 저장됨');
     setTimeout(() => setSaveStatus('idle', ''), 3000);
-  }, 2500);
+  }, 3000);
 }
 
 function saveToDriveQueued() { save(); }
@@ -936,7 +945,7 @@ function getFilteredNotes() {
   else if(currentFilter==='cat') list=list.filter(n=>n.cat===currentCat);
   if(sortMode==='updated') list.sort((a,b)=>b.updated-a.updated);
   else if(sortMode==='created') list.sort((a,b)=>b.created-a.created);
-  else list.sort((a,b)=>a.title.localeCompare(b.title,'ko'));
+  else list.sort((a,b)=>(a.title||'').localeCompare(b.title||''));
   return list;
 }
 
@@ -992,10 +1001,21 @@ function renderNoteList() {
 }
 
 function updateCounts() {
-  document.getElementById('cnt-all').textContent=notes.filter(n=>!n.hidden).length;
-  document.getElementById('cnt-recent').textContent=notes.filter(n=>!n.hidden&&n.updated>Date.now()-7*86400000).length;
-  document.getElementById('cnt-starred').textContent=notes.filter(n=>!n.hidden&&n.starred).length;
-  document.getElementById('cnt-hidden').textContent=notes.filter(n=>n.hidden).length;
+  let all = 0, recent = 0, starred = 0, hidden = 0;
+  const recentCutoff = Date.now() - 7 * 86400000;
+  for (let i = 0; i < notes.length; i++) {
+    const n = notes[i];
+    if (n.hidden) hidden++;
+    else {
+      all++;
+      if (n.updated > recentCutoff) recent++;
+      if (n.starred) starred++;
+    }
+  }
+  document.getElementById('cnt-all').textContent = all;
+  document.getElementById('cnt-recent').textContent = recent;
+  document.getElementById('cnt-starred').textContent = starred;
+  document.getElementById('cnt-hidden').textContent = hidden;
 }
 
 function renderAll(){renderCategories();renderNoteList();updateCounts();updateCatSelect();}
