@@ -345,6 +345,11 @@
       <span id="drive-label">🔑 구글 로그인</span>
     </div>
     <div class="drive-status" id="drive-status">클라우드 서버 안전 저장</div>
+    <div class="btn-drive" id="btn-import-json" style="cursor:pointer; margin-top:8px; background:#45475a;" title="기존 백업(memo-notes.json) 파일 불러오기">
+      <span id="import-icon">📥</span>
+      <span id="import-label">데이터 복원 (JSON)</span>
+    </div>
+    <input type="file" id="file-import-json" accept=".json" style="display:none;" />
   </div>
 </aside>
 
@@ -919,8 +924,71 @@ async function loadFromGASAndUpload() {
     setTimeout(() => setSaveStatus('idle', ''), 3000);
     showToast('✅ Firebase 업로드 완료!');
     document.getElementById('drive-label').textContent = '🔥 Firebase 동기화됨';
+  } else {
+    // FIX: 텅 빈 상태일 때 "☁️ 수신 중..." 무한 멈춤 해제
+    setSaveStatus('idle', '');
+    if (currentUser) {
+      document.getElementById('drive-label').textContent = currentUser.displayName || currentUser.email;
+    }
   }
 }
+
+// ── 데이터 수동 복원 (JSON Import) ────────────────────────────
+addEv('btn-import-json', 'click', () => {
+  const el = document.getElementById('file-import-json');
+  if (el) el.click();
+});
+addEv('file-import-json', 'change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (Array.isArray(data.notes)) {
+        let imported = 0;
+        const noteMap = new Map();
+        notes.forEach(n => noteMap.set(n.id, n));
+        data.notes.forEach(rn => {
+          const local = noteMap.get(rn.id);
+          if (!local || rn.updated >= local.updated) {
+            noteMap.set(rn.id, rn);
+            imported++;
+          }
+        });
+        notes = Array.from(noteMap.values());
+        notes.sort((a, b) => b.updated - a.updated);
+        
+        if (Array.isArray(data.categories) && data.categories.length) {
+          categories = data.categories; // 단순 덮어쓰기
+        }
+        if (data.masterHash) masterHash = data.masterHash;
+        if (Array.isArray(data.templates) && data.templates.length) templates = data.templates;
+
+        saveLocalDebounced();
+        renderAll();
+        
+        showToast(`📥 데이터 복원 성공! (총 ${imported}개 메모 병합됨)`);
+        
+        // Firebase에 즉시 일괄 업로드
+        if (db && currentUser) {
+          showToast('☁️ 복원된 데이터를 클라우드에 일괄 저장 중... (잠시 대기)');
+          setSaveStatus('saving', '☁️ 업로드 중...');
+          await saveMetaToFirebase();
+          for (const note of notes) await saveNoteToFirebase(note);
+          setSaveStatus('saved', '✓ 업로드 완료');
+          setTimeout(() => setSaveStatus('idle', ''), 3000);
+          showToast('✅ Firebase 클라우드 동기화 완료!');
+          document.getElementById('drive-label').textContent = '🔥 Firebase 동기화됨';
+        }
+      }
+    } catch(err) {
+      alert('파일을 읽는 중 오류가 발생했습니다: ' + err.message);
+    }
+    e.target.value = ''; // 초기화
+  };
+  reader.readAsText(file);
+});
 
 // ── Firebase 저장 (메모 하나씩) ───────────────────────────────
 async function saveNoteToFirebase(note) {
