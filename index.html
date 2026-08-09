@@ -683,12 +683,11 @@ const firebaseConfig = {
 let db = null, auth = null, currentUser = null;
 
 try {
-  if (typeof firebase !== 'undefined' && !firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-  }
   if (typeof firebase !== 'undefined') {
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     db = firebase.firestore();
     auth = firebase.auth();
+    auth.setPersistence('local').catch(() => {});
   }
 } catch (e) {
   console.warn("Firebase 초기화 경고:", e);
@@ -733,8 +732,7 @@ function setSaveStatus(state, msg='') {
   el.className = state; el.textContent = msg;
 }
 
-// ── 앱 시작 ───────────────────────────────────────────────────
-// ── 로그인 ────────────────────────────────────────────────────
+// ── 로그인 및 동기화 ───────────────────────────────────────────
 function onLoginSuccess(user) {
   currentUser = user;
   const screen = document.getElementById('login-screen');
@@ -743,16 +741,16 @@ function onLoginSuccess(user) {
   if (label) label.textContent = user.displayName || user.email;
   const icon = document.getElementById('drive-icon');
   if (icon) icon.textContent = '🔥';
-  showToast('🔥 구글 로그인 성공! 데이터를 동기화합니다...');
+  showToast('🔥 구글 로그인 성공! 동기화 진행 중...');
   syncWithFirebase();
 }
 
-window.doGoogleLogin = async function() {
+window.doGoogleLogin = function() {
   const screen = document.getElementById('login-screen');
   if (screen) screen.style.display = 'flex';
 
   if (typeof firebase === 'undefined' || !firebase.auth) {
-    alert('Firebase Auth 모듈을 불러오는 중입니다. 1~2초 후 다시 클릭해주세요.');
+    alert('Firebase 모듈 로딩 중입니다. 1초 후 다시 눌러주세요.');
     return;
   }
   if (!auth) auth = firebase.auth();
@@ -767,44 +765,40 @@ window.doGoogleLogin = async function() {
   if (btn) btn.style.display = 'none';
   if (msg) msg.textContent = '구글 로그인 팝업 창을 확인하세요...';
 
-  try {
-    await auth.setPersistence('local'); // v9 호환 안전한 문자열 방식
-    const result = await auth.signInWithPopup(provider);
+  // 클릭 동기 컨텍스트 유지하여 팝업 차단 방지
+  auth.signInWithPopup(provider).then(result => {
     onLoginSuccess(result.user);
-  } catch (err) {
+  }).catch(err => {
     console.error("로그인 에러:", err);
     if (spinner) spinner.style.display = 'none';
     if (btn) btn.style.display = 'block';
     
     if (err.code === 'auth/unauthorized-domain') {
       if (msg) {
-        msg.innerHTML = `<span style="color:#f38ba8;font-weight:bold;">⚠️ Firebase 승인 도메인 등록 필요</span><br><small style="font-size:12px;color:#cdd6f4;">Firebase 콘솔 ➔ Authentication ➔ 설정 ➔ 승인된 도메인에<br><b style="color:#89b4fa;">${window.location.hostname}</b> 등록이 필수입니다!</small>`;
+        msg.innerHTML = `<span style="color:#f38ba8;font-weight:bold;">⚠️ Firebase 승인 도메인 등록 필요</span><br><small style="font-size:12px;color:#cdd6f4;">Firebase 콘솔 ➔ Authentication ➔ 설정 ➔ 승인된 도메인에<br><b style="color:#89b4fa;">${window.location.hostname}</b> 등록이 필요합니다!</small>`;
       }
     } else if (err.code === 'auth/popup-blocked') {
-      alert('브라우저에서 팝업이 차단되었습니다. 팝업 차단을 해제하고 다시 시도해주세요.');
-      if (msg) msg.textContent = '팝업 차단을 해제해주세요.';
+      alert('브라우저에서 팝업이 차단되었습니다. 주소창 우측에서 팝업 허용 후 다시 눌러주세요.');
+      if (msg) msg.textContent = '팝업 차단을 해제해 주세요.';
     } else if (err.code === 'auth/popup-closed-by-user') {
-      if (msg) msg.textContent = '로그인 창이 닫혔습니다. 다시 시도해주세요.';
+      if (msg) msg.textContent = '로그인 창이 닫혔습니다.';
     } else {
-      alert('로그인 중 오류가 발생했습니다: ' + (err.message || err));
+      alert('로그인 오류: ' + (err.message || err));
       if (msg) msg.textContent = '로그인 오류 발생';
     }
-  }
+  });
 };
 addEv('btn-google-login', 'click', window.doGoogleLogin);
 
 window.onload = () => {
   initCodeMirror();
-  // 1단계: 로컬 캐시 즉시 화면 표시 (0.01초 초고속 렌더링)
   loadLocalAndRender();
 
-  if (auth) {
-    // Redirect 로그인 결과 확인
+  if (typeof firebase !== 'undefined' && firebase.auth) {
+    if (!auth) auth = firebase.auth();
     auth.getRedirectResult().then(result => {
-      if (result && result.user) {
-        onLoginSuccess(result.user);
-      }
-    }).catch(err => console.warn("Redirect 로그인 수신 경고:", err));
+      if (result && result.user) onLoginSuccess(result.user);
+    }).catch(() => {});
 
     auth.onAuthStateChanged(user => {
       if (user) {
@@ -820,7 +814,7 @@ window.onload = () => {
   }
 };
 
-// ── Firebase 병렬 불러오기 & 스마트 데이터 병합 ──────────────────
+// ── Firebase 클라우드 동기화 ───────────────────────────────────
 async function syncWithFirebase() {
   if (!db || !currentUser) return;
   setSaveStatus('saving', '☁️ Cloud 동기화 중...');
@@ -830,7 +824,6 @@ async function syncWithFirebase() {
 
   try {
     const uid = currentUser.uid;
-    // 메타 정보와 메모 목록을 병렬(Promise.all)로 동시 수신 (속도 2배 향상)
     const [metaDoc, notesSnap] = await Promise.all([
       db.collection('users').doc(uid).get(),
       db.collection('users').doc(uid).collection('notes').get()
@@ -845,7 +838,6 @@ async function syncWithFirebase() {
 
     if (!notesSnap.empty) {
       const remoteNotes = notesSnap.docs.map(d => d.data());
-      // 로컬 메모와 클라우드 메모 스마트 병합 (어떤 메모도 유실되지 않도록 보장)
       const noteMap = new Map();
       notes.forEach(n => noteMap.set(n.id, n));
       remoteNotes.forEach(rn => {
@@ -863,9 +855,17 @@ async function syncWithFirebase() {
       if (iconEl) iconEl.textContent = '🔥';
       showToast(`🔥 동기화 완료! 총 ${notes.length}개 메모 불러옴`);
       setTimeout(() => setSaveStatus('idle', ''), 3000);
-      renderAll();
+    } else if (notes.length > 0) {
+      showToast('☁️ 기존 로컬 메모를 클라우드에 업로드 중...');
+      await saveMetaToFirebase();
+      for (const note of notes) await saveNoteToFirebase(note);
+      setSaveStatus('saved', '✓ 업로드 완료');
+      if (labelEl) labelEl.textContent = currentUser.displayName || currentUser.email;
+      if (iconEl) iconEl.textContent = '🔥';
+      setTimeout(() => setSaveStatus('idle', ''), 3000);
     } else {
-      await loadFromGASAndUpload();
+      setSaveStatus('idle', '');
+      if (labelEl) labelEl.textContent = currentUser.displayName || currentUser.email;
     }
   } catch(e) {
     console.warn('Firebase 동기화 경고:', e);
@@ -884,10 +884,7 @@ async function syncWithFirebase() {
   renderAll();
 }
 
-function loadFromFirebase() { syncWithFirebase(); }
-
 function loadLocalAndRender() {
-  // 로컬스토리지에서 캐시된 데이터 불러오기
   try {
     const localStr = localStorage.getItem('memo_app_data');
     if (localStr) {
@@ -907,28 +904,6 @@ function loadLocalAndRender() {
   }
   driveLoadDone = true;
   renderAll();
-}
-// GAS 호환성 별칭
-function loadFromGAS() { loadLocalAndRender(); }
-
-async function loadFromGASAndUpload() {
-  loadLocalAndRender();
-  if (notes.length > 0 && db) {
-    showToast('☁️ 기존 메모를 Firebase에 저장 중...');
-    setSaveStatus('saving', '☁️ 업로드 중...');
-    await saveMetaToFirebase();
-    for (const note of notes) await saveNoteToFirebase(note);
-    setSaveStatus('saved', '✓ 업로드 완료');
-    setTimeout(() => setSaveStatus('idle', ''), 3000);
-    showToast('✅ Firebase 업로드 완료!');
-    document.getElementById('drive-label').textContent = '🔥 Firebase 동기화됨';
-  } else {
-    // FIX: 텅 빈 상태일 때 "☁️ 수신 중..." 무한 멈춤 해제
-    setSaveStatus('idle', '');
-    if (currentUser) {
-      document.getElementById('drive-label').textContent = currentUser.displayName || currentUser.email;
-    }
-  }
 }
 
 // ── 데이터 수동 복원 (JSON Import) ────────────────────────────
@@ -1048,7 +1023,6 @@ function save() {
 }
 
 function saveToDriveQueued() { save(); }
-function uid_fn() { return uid(); }
 
 // ── 렌더링 ───────────────────────────────────────────────────
 function renderCategories() {
