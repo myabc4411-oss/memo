@@ -340,11 +340,11 @@
     <button class="btn-new-cat" id="btn-add-cat">＋ 카테고리 추가</button>
   </div>
   <div class="sidebar-footer">
-    <div class="btn-drive" id="btn-drive" style="cursor:pointer;">
-      <span id="drive-icon">🔥</span>
-      <span id="drive-label">동기화 중...</span>
+    <div class="btn-drive" id="btn-drive" style="cursor:pointer;" title="클릭하여 구글 계정으로 로그인/동기화">
+      <span id="drive-icon">🔑</span>
+      <span id="drive-label">🔑 구글 로그인</span>
     </div>
-    <div class="drive-status" id="drive-status">모든 변경사항이 자동 저장됩니다</div>
+    <div class="drive-status" id="drive-status">클라우드 서버 안전 저장</div>
   </div>
 </aside>
 
@@ -808,6 +808,9 @@ window.onload = () => {
 async function syncWithFirebase() {
   if (!db || !currentUser) return;
   setSaveStatus('saving', '☁️ Cloud 동기화 중...');
+  const labelEl = document.getElementById('drive-label');
+  const iconEl = document.getElementById('drive-icon');
+  if (labelEl) labelEl.textContent = '☁️ 수신 중...';
 
   try {
     const uid = currentUser.uid;
@@ -840,6 +843,9 @@ async function syncWithFirebase() {
 
       saveLocalDebounced();
       setSaveStatus('saved', '✓ Cloud 동기화 완료');
+      if (labelEl) labelEl.textContent = currentUser.displayName || currentUser.email;
+      if (iconEl) iconEl.textContent = '🔥';
+      showToast(`🔥 동기화 완료! 총 ${notes.length}개 메모 불러옴`);
       setTimeout(() => setSaveStatus('idle', ''), 3000);
       renderAll();
     } else {
@@ -848,6 +854,7 @@ async function syncWithFirebase() {
   } catch(e) {
     console.warn('Firebase 동기화 경고:', e);
     setSaveStatus('idle', '');
+    if (labelEl && currentUser) labelEl.textContent = currentUser.displayName || currentUser.email;
   }
 
   if (!categories.length) {
@@ -1431,11 +1438,10 @@ addEv('template-name-input', 'keydown', e => { if (e.key === 'Enter') { const bt
 
 addEv('btn-drive', 'click', () => {
   if (currentUser) {
-    showToast('🔥 구글 동기화 상태: ' + (currentUser.email || currentUser.displayName));
+    showToast('☁️ 파이어베이스 데이터 동기화 중...');
     syncWithFirebase();
   } else {
-    const screen = document.getElementById('login-screen');
-    if (screen) screen.style.display = 'flex';
+    doGoogleLogin();
   }
 });
 </script>
