@@ -306,7 +306,7 @@
 <body>
 
 <!-- 로딩/로그인 화면 -->
-<div id="login-screen" style="display:flex;position:fixed;inset:0;z-index:999;background:#1e1e2e;flex-direction:column;align-items:center;justify-content:center;gap:20px;">
+<div id="login-screen" style="display:flex;position:fixed;inset:0;z-index:999;background:#1e1e2e;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
   <div style="font-size:52px;">📒</div>
   <div style="font-size:22px;font-weight:700;color:#89b4fa;">내 메모장</div>
   <div id="login-msg" style="font-size:14px;color:#cdd6f4;text-align:center;line-height:1.7;">구글 계정으로 로그인하세요</div>
@@ -727,17 +727,40 @@ function setSaveStatus(state, msg='') {
 
 // ── 앱 시작 ───────────────────────────────────────────────────
 // ── 로그인 ────────────────────────────────────────────────────
-document.getElementById('btn-google-login').addEventListener('click', () => {
-  if (!auth) return;
+document.getElementById('btn-google-login').addEventListener('click', async () => {
+  if (!auth) {
+    alert('Firebase Auth가 로드되지 않았습니다. 페이지를 새로고침 해주세요.');
+    return;
+  }
   const provider = new firebase.auth.GoogleAuthProvider();
   document.getElementById('login-spinner').style.display = 'block';
   document.getElementById('btn-google-login').style.display = 'none';
-  document.getElementById('login-msg').textContent = '로그인 중...';
-  auth.signInWithPopup(provider).catch(err => {
+  document.getElementById('login-msg').textContent = '구글 로그인 팝업 창을 확인하세요...';
+
+  try {
+    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    const result = await auth.signInWithPopup(provider);
+    currentUser = result.user;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('drive-label').textContent = currentUser.displayName || currentUser.email;
+    document.getElementById('drive-icon').textContent = '🔥';
+    showToast('🔥 구글 로그인 성공! 데이터를 동기화합니다...');
+    await syncWithFirebase();
+  } catch (err) {
+    console.error("Firebase Login Error:", err);
     document.getElementById('login-spinner').style.display = 'none';
     document.getElementById('btn-google-login').style.display = 'block';
-    document.getElementById('login-msg').textContent = '로그인 실패. 다시 시도해주세요.';
-  });
+    
+    if (err.code === 'auth/unauthorized-domain') {
+      document.getElementById('login-msg').innerHTML = `<span style="color:#f38ba8;font-weight:bold;">⚠️ Firebase 승인 도메인 등록 필요</span><br><small style="font-size:12px;color:#cdd6f4;">Firebase 콘솔 ➔ Authentication ➔ 설정 ➔ 승인된 도메인에<br><b style="color:#89b4fa;">myabc4411-oss.github.io</b> 등록이 필요합니다!</small>`;
+    } else if (err.code === 'auth/popup-blocked') {
+      document.getElementById('login-msg').textContent = '⚠️ 브라우저 팝업이 차단되었습니다. 주소창 옆 팝업 차단을 해제해 주세요!';
+    } else if (err.code === 'auth/popup-closed-by-user') {
+      document.getElementById('login-msg').textContent = '구글 로그인 창이 닫혔습니다. 버튼을 다시 눌러주세요.';
+    } else {
+      document.getElementById('login-msg').textContent = '로그인 오류 (' + (err.code || 'ERR') + '): ' + (err.message || err);
+    }
+  }
 });
 
 window.onload = () => {
