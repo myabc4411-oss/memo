@@ -730,6 +730,18 @@ function setSaveStatus(state, msg='') {
 
 // ── 앱 시작 ───────────────────────────────────────────────────
 // ── 로그인 ────────────────────────────────────────────────────
+function onLoginSuccess(user) {
+  currentUser = user;
+  const screen = document.getElementById('login-screen');
+  if (screen) screen.style.display = 'none';
+  const label = document.getElementById('drive-label');
+  if (label) label.textContent = user.displayName || user.email;
+  const icon = document.getElementById('drive-icon');
+  if (icon) icon.textContent = '🔥';
+  showToast('🔥 구글 로그인 성공! 데이터를 동기화합니다...');
+  syncWithFirebase();
+}
+
 window.doGoogleLogin = async function() {
   if (typeof firebase === 'undefined' || !firebase.auth) {
     alert('Firebase Auth 모듈을 불러오는 중입니다. 1~2초 후 다시 클릭해주세요.');
@@ -737,6 +749,9 @@ window.doGoogleLogin = async function() {
   }
   if (!auth) auth = firebase.auth();
   const provider = new firebase.auth.GoogleAuthProvider();
+  provider.addScope('email');
+  provider.addScope('profile');
+
   const spinner = document.getElementById('login-spinner');
   const btn = document.getElementById('btn-google-login');
   const msg = document.getElementById('login-msg');
@@ -747,30 +762,26 @@ window.doGoogleLogin = async function() {
   try {
     await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
     const result = await auth.signInWithPopup(provider);
-    currentUser = result.user;
-    const screen = document.getElementById('login-screen');
-    if (screen) screen.style.display = 'none';
-    const label = document.getElementById('drive-label');
-    if (label) label.textContent = currentUser.displayName || currentUser.email;
-    const icon = document.getElementById('drive-icon');
-    if (icon) icon.textContent = '🔥';
-    showToast('🔥 구글 로그인 성공! 데이터를 동기화합니다...');
-    await syncWithFirebase();
+    onLoginSuccess(result.user);
   } catch (err) {
-    console.error("Firebase Login Error:", err);
-    if (spinner) spinner.style.display = 'none';
-    if (btn) btn.style.display = 'block';
-    
-    if (msg) {
-      if (err.code === 'auth/unauthorized-domain') {
-        msg.innerHTML = `<span style="color:#f38ba8;font-weight:bold;">⚠️ Firebase 승인 도메인 등록 필요</span><br><small style="font-size:12px;color:#cdd6f4;">Firebase 콘솔 ➔ Authentication ➔ 설정 ➔ 승인된 도메인에<br><b style="color:#89b4fa;">myabc4411-oss.github.io</b> 등록이 필요합니다!</small>`;
-      } else if (err.code === 'auth/popup-blocked') {
-        msg.textContent = '⚠️ 브라우저 팝업이 차단되었습니다. 주소창 옆 팝업 차단을 해제해 주세요!';
-      } else if (err.code === 'auth/popup-closed-by-user') {
-        msg.textContent = '구글 로그인 창이 닫혔습니다. 버튼을 다시 눌러주세요.';
-      } else {
-        msg.textContent = '로그인 오류 (' + (err.code || 'ERR') + '): ' + (err.message || err);
+    console.warn("Popup 로그인 실패/차단 - Redirect 로그인 시도:", err);
+    if (err.code === 'auth/unauthorized-domain') {
+      if (spinner) spinner.style.display = 'none';
+      if (btn) btn.style.display = 'block';
+      if (msg) {
+        msg.innerHTML = `<span style="color:#f38ba8;font-weight:bold;">⚠️ Firebase 승인 도메인 등록 필요</span><br><small style="font-size:12px;color:#cdd6f4;">Firebase 콘솔 ➔ Authentication ➔ 설정 ➔ 승인된 도메인에<br><b style="color:#89b4fa;">myabc4411-oss.github.io</b> 등록이 필수입니다!</small>`;
       }
+      return;
+    }
+    // 팝업이 차단되거나 모바일 환경인 경우 Redirect 방식으로 자동 이중전환
+    try {
+      if (msg) msg.textContent = '리다이렉트 로그인으로 전환 중...';
+      await auth.signInWithRedirect(provider);
+    } catch (err2) {
+      console.error("Firebase Login Error:", err2);
+      if (spinner) spinner.style.display = 'none';
+      if (btn) btn.style.display = 'block';
+      if (msg) msg.textContent = '로그인 오류 (' + (err2.code || 'ERR') + '): ' + (err2.message || err2);
     }
   }
 };
@@ -782,21 +793,20 @@ window.onload = () => {
   loadLocalAndRender();
 
   if (auth) {
+    // Redirect 로그인 결과 확인
+    auth.getRedirectResult().then(result => {
+      if (result && result.user) {
+        onLoginSuccess(result.user);
+      }
+    }).catch(err => console.warn("Redirect 로그인 수신 경고:", err));
+
     auth.onAuthStateChanged(user => {
       if (user) {
-        currentUser = user;
-        const screen = document.getElementById('login-screen');
-        if (screen) screen.style.display = 'none';
-        const label = document.getElementById('drive-label');
-        if (label) label.textContent = user.displayName || user.email;
-        const icon = document.getElementById('drive-icon');
-        if (icon) icon.textContent = '🔥';
-        // 2단계: 파이어베이스와 배경에서 병렬 병합 동기화
-        syncWithFirebase();
+        onLoginSuccess(user);
       } else {
         currentUser = null;
         const label = document.getElementById('drive-label');
-        if (label) label.textContent = '구글 로그인';
+        if (label) label.textContent = '🔑 구글 로그인';
         const icon = document.getElementById('drive-icon');
         if (icon) icon.textContent = '🔑';
       }
