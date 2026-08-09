@@ -127,6 +127,8 @@
       border: none;
       outline: none;
       resize: none;
+      contain: layout paint;
+      text-rendering: optimizeSpeed;
     }
     #note-body::placeholder { color: #ccc; }
     #note-body::-webkit-scrollbar { width: 6px; }
@@ -145,7 +147,7 @@
     #btn-close-in-search:hover { color: var(--danger); }
 
     /* 저장 상태 */
-    #save-status { font-size: 11.5px; padding: 3px 8px; border-radius: 5px; white-space: nowrap; transition: all .2s; }
+    #save-status { font-size: 11.5px; padding: 3px 8px; border-radius: 5px; white-space: nowrap; }
     #save-status.idle { color: var(--muted); }
     #save-status.dirty { color: #fab387; font-weight: 600; }
     #save-status.saving { color: #f9e2af; background: #3d3820; }
@@ -583,12 +585,10 @@ function updateActiveCardUI() {
   if (dateEl) dateEl.textContent = fmtDate(currentNote.updated);
 }
 
-// ── 완전 수동 저장 모드: 타자 칠 때는 자바스크립트 0% 가동 ──
+// ── 절대적 0.00% 렉 방지: input 이벤트에서 DOM/CSS 조작 100% 제거 ──
 const noteBodyEl = document.getElementById('note-body');
 noteBodyEl.addEventListener('input', () => {
-  if (!currentNote) return;
-  isDirty = true;
-  setSaveStatus('dirty', '● 미저장');
+  if (currentNote) isDirty = true;
 });
 
 // ── 메모 내 검색 ─────────────────────────────────────────────
@@ -1140,9 +1140,7 @@ document.addEventListener('keydown',e=>{
 
 const noteTitleEl = document.getElementById('note-title');
 noteTitleEl.addEventListener('input', () => {
-  if (!currentNote) return;
-  isDirty = true;
-  setSaveStatus('dirty', '● 미저장');
+  if (currentNote) isDirty = true;
 });
 document.getElementById('note-cat').addEventListener('change', () => { if (currentNote) saveCurrentNote(); });
 document.getElementById('note-starred').addEventListener('change', () => { if (currentNote) saveCurrentNote(); });
