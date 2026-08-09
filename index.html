@@ -306,7 +306,7 @@
 <body>
 
 <!-- 로딩/로그인 화면 (비차단 오버레이) -->
-<div id="login-screen" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(30,30,46,0.95);flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+<div id="login-screen" style="display:flex;position:fixed;inset:0;z-index:999;background:rgba(30,30,46,0.95);flex-direction:column;align-items:center;justify-content:center;gap:16px;">
   <div style="font-size:52px;">📒</div>
   <div style="font-size:22px;font-weight:700;color:#89b4fa;">내 메모장 구글 동기화</div>
   <div id="login-msg" style="font-size:14px;color:#cdd6f4;text-align:center;line-height:1.7;">구글 계정으로 로그인하시면 클라우드와 자동 동기화됩니다</div>
@@ -792,25 +792,44 @@ addEv('btn-google-login', 'click', window.doGoogleLogin);
 
 window.onload = () => {
   initCodeMirror();
-  loadLocalAndRender();
 
   if (typeof firebase !== 'undefined' && firebase.auth) {
     if (!auth) auth = firebase.auth();
-    auth.getRedirectResult().then(result => {
-      if (result && result.user) onLoginSuccess(result.user);
-    }).catch(() => {});
+
+    // 로딩 화면 표시
+    const loginScreen = document.getElementById('login-screen');
+    if (loginScreen) {
+      loginScreen.style.display = 'flex';
+      const msg = document.getElementById('login-msg');
+      if (msg) msg.textContent = '로그인 상태 확인 중...';
+      const spinner = document.getElementById('login-spinner');
+      if (spinner) spinner.style.display = 'block';
+      const btn = document.getElementById('btn-google-login');
+      if (btn) btn.style.display = 'none';
+    }
 
     auth.onAuthStateChanged(user => {
       if (user) {
+        // 로그인됨 → Firebase에서 데이터 불러오기
         onLoginSuccess(user);
       } else {
+        // 로그인 안 됨 → 로그인 버튼 보여주기
         currentUser = null;
-        const label = document.getElementById('drive-label');
-        if (label) label.textContent = '🔑 구글 로그인';
-        const icon = document.getElementById('drive-icon');
-        if (icon) icon.textContent = '🔑';
+        if (loginScreen) {
+          loginScreen.style.display = 'flex';
+          const msg = document.getElementById('login-msg');
+          if (msg) msg.textContent = '구글 계정으로 로그인하세요';
+          const spinner = document.getElementById('login-spinner');
+          if (spinner) spinner.style.display = 'none';
+          const btn = document.getElementById('btn-google-login');
+          if (btn) btn.style.display = 'block';
+        }
+        // 로컬 데이터라도 보여주기 (오프라인 대비)
+        loadLocalAndRender();
       }
     });
+  } else {
+    loadLocalAndRender();
   }
 };
 
