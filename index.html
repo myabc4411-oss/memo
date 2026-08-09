@@ -554,6 +554,7 @@ function setCMText(text) {
 
 let isDirty = false;
 let autoSaveTimer = null;
+let editingStatusTimer = null;
 
 function flushCurrentNoteData() {
   if (currentNote && isDirty) {
@@ -566,15 +567,37 @@ function flushCurrentNoteData() {
   }
 }
 
+function updateActiveCardUI() {
+  if (!currentNote) return;
+  const card = document.querySelector(`.note-card[data-id="${currentNote.id}"]`);
+  if (!card) return;
+  const titleEl = card.querySelector('.note-card-title');
+  if (titleEl) titleEl.innerHTML = (currentNote.locked ? '🔒 ' : '') + escHtml(currentNote.title || '제목 없음');
+  const prevEl = card.querySelector('.note-card-preview');
+  if (prevEl && !currentNote.locked) {
+    const bodyText = (currentNote.body || '').slice(0, 150).replace(/\n/g, ' ');
+    prevEl.textContent = bodyText;
+  }
+  const dateEl = card.querySelector('.note-date');
+  if (dateEl) dateEl.textContent = fmtDate(currentNote.updated);
+}
+
 document.getElementById('note-body').addEventListener('input', () => {
   if (!currentNote) return;
   isDirty = true;
-  setSaveStatus('idle', '✏️ 편집 중...');
+  currentNote.body = document.getElementById('note-body').value;
+  currentNote.updated = Date.now();
+  updateActiveCardUI();
+  
+  clearTimeout(editingStatusTimer);
+  editingStatusTimer = setTimeout(() => { setSaveStatus('idle', '✏️ 편집 중...'); }, 200);
+
   clearTimeout(autoSaveTimer);
   autoSaveTimer = setTimeout(() => {
     flushCurrentNoteData();
+    pendingSaves.add(currentNote.id);
     save();
-  }, 4000);
+  }, 2500);
 });
 
 // ── 메모 내 검색 ─────────────────────────────────────────────
@@ -844,9 +867,16 @@ async function deleteNoteFromFirebase(noteId) {
 }
 
 // ── 저장 메인 함수 ────────────────────────────────────────────
+let localSaveDebounceTimer = null;
+function saveLocalDebounced() {
+  clearTimeout(localSaveDebounceTimer);
+  localSaveDebounceTimer = setTimeout(() => {
+    try { localStorage.setItem('memo_app_data', JSON.stringify({notes, categories, masterHash, templates})); } catch(e) {}
+  }, 2500);
+}
+
 function save() {
-  // 로컬 즉시 저장
-  try { localStorage.setItem('memo_app_data', JSON.stringify({notes, categories, masterHash, templates})); } catch(e) {}
+  saveLocalDebounced();
   clearTimeout(saveDebounceTimer);
   saveDebounceTimer = setTimeout(async () => {
     setSaveStatus('saving', '☁️ 저장 중...');
@@ -858,7 +888,7 @@ function save() {
     pendingSaves.clear();
     setSaveStatus('saved', '✓ 저장됨');
     setTimeout(() => setSaveStatus('idle', ''), 3000);
-  }, 2000);
+  }, 2500);
 }
 
 function saveToDriveQueued() { save(); }
@@ -917,8 +947,11 @@ function renderNoteList() {
     currentFilter==='starred'?'즐겨찾기':currentFilter==='hidden'?'숨긴 메모':
     (categories.find(c=>c.id===currentCat)?.name||'카테고리');
   if(!list.length){el.innerHTML=`<div class="empty-state">${q?'검색 결과가 없습니다.':'메모가 없습니다.<br>새 메모를 작성해보세요.'}</div>`;return;}
+  
+  const renderLimit = q ? 200 : 80;
+  const displayList = list.slice(0, renderLimit);
   el.innerHTML='';
-  list.forEach(note=>{
+  displayList.forEach(note=>{
     const cat=categories.find(c=>c.id===note.cat);
     const div=document.createElement('div');
     div.className='note-card'+(currentNote?.id===note.id?' active':'')+(note.locked?' locked-card':'')+(note.hidden?' hidden-card':'');
@@ -949,6 +982,13 @@ function renderNoteList() {
     });
     el.appendChild(div);
   });
+
+  if (list.length > renderLimit) {
+    const moreDiv = document.createElement('div');
+    moreDiv.style.cssText = 'text-align:center;padding:10px;color:var(--muted);font-size:12px;';
+    moreDiv.textContent = `외 ${list.length - renderLimit}개 메모 더 있음 (검색으로 바로 찾기 가능)`;
+    el.appendChild(moreDiv);
+  }
 }
 
 function updateCounts() {
@@ -1061,9 +1101,20 @@ document.addEventListener('keydown',e=>{
 let titleAutoSaveTimer = null;
 document.getElementById('note-title').addEventListener('input', () => {
   if (!currentNote) return;
-  setSaveStatus('idle', '✏️ 편집 중...');
+  isDirty = true;
+  currentNote.title = document.getElementById('note-title').value.trim();
+  currentNote.updated = Date.now();
+  updateActiveCardUI();
+
+  clearTimeout(editingStatusTimer);
+  editingStatusTimer = setTimeout(() => { setSaveStatus('idle', '✏️ 편집 중...'); }, 200);
+
   clearTimeout(titleAutoSaveTimer);
-  titleAutoSaveTimer = setTimeout(() => saveCurrentNote(true), 3000);
+  titleAutoSaveTimer = setTimeout(() => {
+    flushCurrentNoteData();
+    pendingSaves.add(currentNote.id);
+    save();
+  }, 2500);
 });
 document.getElementById('note-cat').addEventListener('change', () => { if (currentNote) saveCurrentNote(); });
 document.getElementById('note-starred').addEventListener('change', () => { if (currentNote) saveCurrentNote(); });
