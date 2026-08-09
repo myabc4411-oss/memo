@@ -311,7 +311,7 @@
   <div style="font-size:22px;font-weight:700;color:#89b4fa;">내 메모장</div>
   <div id="login-msg" style="font-size:14px;color:#cdd6f4;text-align:center;line-height:1.7;">구글 계정으로 로그인하세요</div>
   <div id="login-spinner" style="display:none;width:28px;height:28px;border:3px solid #45475a;border-top-color:#89b4fa;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
-  <button id="btn-google-login" style="background:#89b4fa;color:#1e1e2e;border:none;border-radius:10px;padding:12px 28px;font-size:15px;font-weight:700;cursor:pointer;">🔑 구글 로그인</button>
+  <button id="btn-google-login" onclick="doGoogleLogin()" style="background:#89b4fa;color:#1e1e2e;border:none;border-radius:10px;padding:12px 28px;font-size:15px;font-weight:700;cursor:pointer;">🔑 구글 로그인</button>
 </div>
 <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 
@@ -729,11 +729,12 @@ function setSaveStatus(state, msg='') {
 
 // ── 앱 시작 ───────────────────────────────────────────────────
 // ── 로그인 ────────────────────────────────────────────────────
-addEv('btn-google-login', 'click', async () => {
-  if (!auth) {
-    alert('Firebase Auth 모듈이 초기화되는 중입니다. 1~2초 후 다시 눌러주세요.');
+window.doGoogleLogin = async function() {
+  if (typeof firebase === 'undefined' || !firebase.auth) {
+    alert('Firebase Auth 모듈을 불러오는 중입니다. 1~2초 후 다시 클릭해주세요.');
     return;
   }
+  if (!auth) auth = firebase.auth();
   const provider = new firebase.auth.GoogleAuthProvider();
   const spinner = document.getElementById('login-spinner');
   const btn = document.getElementById('btn-google-login');
@@ -771,7 +772,8 @@ addEv('btn-google-login', 'click', async () => {
       }
     }
   }
-});
+};
+addEv('btn-google-login', 'click', window.doGoogleLogin);
 
 window.onload = () => {
   initCodeMirror();
@@ -1325,28 +1327,23 @@ document.getElementById('cat-confirm').addEventListener('click',()=>{
 document.getElementById('cat-name-input').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('cat-confirm').click();});
 document.getElementById('cat-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open');});
 
-// ── 체크리스트 ───────────────────────────────────────────────
-document.getElementById('btn-checklist').addEventListener('click', () => {
-  const textarea = document.getElementById('note-body');
-  if (!textarea) return;
-  const start = textarea.selectionStart;
-  const end = textarea.selectionEnd;
-  const val = textarea.value;
-  const lineStart = val.lastIndexOf('\n', start - 1) + 1;
-  let lineEnd = val.indexOf('\n', end);
-  if (lineEnd === -1) lineEnd = val.length;
-  const line = val.substring(lineStart, lineEnd);
-  const trimmed = line.trimStart();
+// ── 체크리스트 (CodeMirror 호환) ───────────────────────────────
+addEv('btn-checklist', 'click', () => {
+  if (!editor) return;
+  const doc = editor.getDoc();
+  const cursor = doc.getCursor();
+  const lineNum = cursor.line;
+  const lineText = doc.getLine(lineNum) || '';
+  const trimmed = lineText.trimStart();
   let newLine = '';
   if (trimmed.startsWith('[ ] ') || trimmed.startsWith('[x] ')) {
     const isChecked = trimmed.startsWith('[x] ');
-    newLine = isChecked ? line.replace('[x] ', '[ ] ') : line.replace('[ ] ', '[x] ');
+    newLine = isChecked ? lineText.replace('[x] ', '[ ] ') : lineText.replace('[ ] ', '[x] ');
   } else {
-    newLine = '[ ] ' + line;
+    newLine = '[ ] ' + lineText;
   }
-  textarea.value = val.substring(0, lineStart) + newLine + val.substring(lineEnd);
-  textarea.setSelectionRange(lineStart + newLine.length, lineStart + newLine.length);
-  textarea.focus();
+  doc.replaceRange(newLine, { line: lineNum, ch: 0 }, { line: lineNum, ch: lineText.length });
+  editor.focus();
 });
 
 // ── 템플릿 ───────────────────────────────────────────────────
@@ -1354,6 +1351,7 @@ function saveTemplates() { saveToDriveQueued(); }
 
 function renderTemplateList() {
   const el = document.getElementById('template-list');
+  if (!el) return;
   if (!templates.length) {
     el.innerHTML = '<div class="template-empty">저장된 템플릿이 없어요.<br>메모를 작성 후 💾 버튼으로 저장하세요.</div>';
     return;
@@ -1370,53 +1368,61 @@ function renderTemplateList() {
       <button class="template-item-del" data-idx="${i}" title="삭제">🗑</button>`;
     div.addEventListener('click', e => {
       if (e.target.closest('.template-item-del')) return;
-      const el = document.getElementById('note-body');
-      if (!el) return;
-      const current = el.value;
+      if (!editor) return;
+      const current = getCMText();
       const insert = current ? current + '\n\n' + t.body : t.body;
-      el.value = insert;
-      el.scrollTop = 0;
-      document.getElementById('template-modal').classList.remove('open');
+      setCMText(insert);
+      const modal = document.getElementById('template-modal');
+      if (modal) modal.classList.remove('open');
       showToast('📋 템플릿이 적용됐어요!');
     });
-    div.querySelector('.template-item-del').addEventListener('click', e => {
-      e.stopPropagation();
-      if (confirm(`"${t.name}" 템플릿을 삭제할까요?`)) {
-        templates.splice(i, 1);
-        saveTemplates();
-        renderTemplateList();
-      }
-    });
+    const delBtn = div.querySelector('.template-item-del');
+    if (delBtn) {
+      delBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        if (confirm(`"${t.name}" 템플릿을 삭제할까요?`)) {
+          templates.splice(i, 1);
+          saveTemplates();
+          renderTemplateList();
+        }
+      });
+    }
     el.appendChild(div);
   });
 }
 
-document.getElementById('btn-template').addEventListener('click', () => { renderTemplateList(); document.getElementById('template-modal').classList.add('open'); });
-document.getElementById('template-cancel').addEventListener('click', () => { document.getElementById('template-modal').classList.remove('open'); });
-document.getElementById('template-modal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); });
+addEv('btn-template', 'click', () => { renderTemplateList(); const m = document.getElementById('template-modal'); if (m) m.classList.add('open'); });
+addEv('template-cancel', 'click', () => { const m = document.getElementById('template-modal'); if (m) m.classList.remove('open'); });
+addEv('template-modal', 'click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); });
 
-document.getElementById('btn-save-template').addEventListener('click', () => {
+addEv('btn-save-template', 'click', () => {
   if (!currentNote) { showToast('메모를 먼저 열어주세요'); return; }
-  const defaultName = document.getElementById('note-title').value.trim() || '새 템플릿';
-  document.getElementById('template-name-input').value = defaultName;
-  document.getElementById('template-err').textContent = '';
-  document.getElementById('save-template-modal').classList.add('open');
-  document.getElementById('template-name-input').focus();
-  document.getElementById('template-name-input').select();
+  const titleInp = document.getElementById('note-title');
+  const defaultName = (titleInp ? titleInp.value.trim() : '') || '새 템플릿';
+  const nameInp = document.getElementById('template-name-input');
+  if (nameInp) { nameInp.value = defaultName; nameInp.focus(); nameInp.select(); }
+  const errEl = document.getElementById('template-err');
+  if (errEl) errEl.textContent = '';
+  const modal = document.getElementById('save-template-modal');
+  if (modal) modal.classList.add('open');
 });
-document.getElementById('save-template-cancel').addEventListener('click', () => { document.getElementById('save-template-modal').classList.remove('open'); });
-document.getElementById('save-template-modal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); });
-document.getElementById('save-template-confirm').addEventListener('click', () => {
-  const name = document.getElementById('template-name-input').value.trim();
-  if (!name) { document.getElementById('template-err').textContent = '이름을 입력하세요'; return; }
+
+addEv('save-template-cancel', 'click', () => { const m = document.getElementById('save-template-modal'); if (m) m.classList.remove('open'); });
+addEv('save-template-modal', 'click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); });
+addEv('save-template-confirm', 'click', () => {
+  const nameInp = document.getElementById('template-name-input');
+  const name = nameInp ? nameInp.value.trim() : '';
+  const errEl = document.getElementById('template-err');
+  if (!name) { if (errEl) errEl.textContent = '이름을 입력하세요'; return; }
   const body = getCMText();
-  if (!body) { document.getElementById('template-err').textContent = '내용이 없어요'; return; }
+  if (!body) { if (errEl) errEl.textContent = '내용이 없어요'; return; }
   templates.unshift({ id: uid(), name, body });
   saveTemplates();
-  document.getElementById('save-template-modal').classList.remove('open');
+  const modal = document.getElementById('save-template-modal');
+  if (modal) modal.classList.remove('open');
   showToast('💾 템플릿으로 저장됐어요!');
 });
-document.getElementById('template-name-input').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('save-template-confirm').click(); });
+addEv('template-name-input', 'keydown', e => { if (e.key === 'Enter') { const btn = document.getElementById('save-template-confirm'); if (btn) btn.click(); } });
 </script>
 <script>
   if ('serviceWorker' in navigator) {
