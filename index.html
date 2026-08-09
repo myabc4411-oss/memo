@@ -1248,6 +1248,23 @@ async function saveCurrentNote(silent = false){
   const idx=notes.findIndex(n=>n.id===currentNote.id);
   if(idx>=0)notes[idx]=currentNote;else notes.unshift(currentNote);
 
+  // ── 메모 크기 체크 ──────────────────────────────────────────
+  const noteBytes = new Blob([JSON.stringify(currentNote)]).size;
+  const noteMB = (noteBytes / 1024 / 1024).toFixed(2);
+  if (noteBytes > 900000) {
+    // 900KB 초과 → 저장 불가 경고
+    setSaveStatus('error', `⚠️ 메모가 너무 큽니다 (${noteMB}MB)`);
+    showToast(`⚠️ 메모 크기가 ${noteMB}MB로 한도(1MB)를 초과했어요! 메모를 나눠주세요.`);
+    return;
+  } else if (noteBytes > 700000) {
+    // 700KB 초과 → 경고 토스트
+    const percent = Math.round(noteBytes / 1000000 * 100);
+    showToast(`⚠️ 메모 크기: ${noteMB}MB (한도의 ${percent}%). 곧 한도에 도달해요!`);
+  } else if (noteBytes > 500000) {
+    // 500KB 초과 → 상태바에만 표시
+    setSaveStatus('idle', `📊 ${noteMB}MB`);
+  }
+
   setSaveStatus('saving', '💾 저장 중...');
   
   // 1. 로컬 저장
@@ -1263,7 +1280,7 @@ async function saveCurrentNote(silent = false){
   document.getElementById('note-date').textContent='수정: '+fmtDate(currentNote.updated);
   updateActiveCardUI();
   setSaveStatus('saved', '✓ 저장 완료');
-  showToast('💾 메모가 저장되었습니다');
+  if (!silent) showToast('💾 메모가 저장되었습니다');
   if (!silent) renderAll();
   setTimeout(() => setSaveStatus('idle', ''), 2500);
 }
