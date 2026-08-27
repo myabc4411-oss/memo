@@ -640,20 +640,24 @@ function closeInNoteSearch() {
 }
 function runInNoteSearch(query) {
   inNoteMatches = []; inNoteCurrent = -1;
-  const textarea = document.getElementById('note-body');
-  if (!textarea || !query) { document.getElementById('in-note-search-count').textContent = '-'; return; }
-  const content = textarea.value, lower = content.toLowerCase(), q = query.toLowerCase();
+  if (!query) { document.getElementById('in-note-search-count').textContent = '-'; return; }
+  // CodeMirror 에디터에서 내용 읽기
+  const content = editor ? editor.getValue() : '';
+  if (!content) { document.getElementById('in-note-search-count').textContent = '없음'; return; }
+  const lower = content.toLowerCase(), q = query.toLowerCase();
   let idx = 0;
   while ((idx = lower.indexOf(q, idx)) !== -1) { inNoteMatches.push(idx); idx += q.length; }
   if (inNoteMatches.length > 0) { inNoteCurrent = 0; scrollToMatch(0, query.length); }
   updateInNoteCount();
 }
 function scrollToMatch(idx, queryLen) {
-  const textarea = document.getElementById('note-body');
-  if (!textarea || !inNoteMatches.length) return;
+  if (!editor || !inNoteMatches.length) return;
   const pos = inNoteMatches[idx];
-  textarea.setSelectionRange(pos, pos + (queryLen || 0));
-  textarea.focus();
+  const from = editor.posFromIndex(pos);
+  const to = editor.posFromIndex(pos + (queryLen || 0));
+  editor.setSelection(from, to);
+  editor.scrollIntoView({from, to}, 100);
+  editor.focus();
 }
 function updateInNoteCount() { document.getElementById('in-note-search-count').textContent = inNoteMatches.length === 0 ? '없음' : `${inNoteCurrent+1}/${inNoteMatches.length}`; }
 function inNoteNext() {
