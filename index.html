@@ -197,6 +197,8 @@
     .template-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 20px; }
 
     mark { background: #fef08a; border-radius: 2px; }
+    .cm-search-match { background: #fef08a !important; border-radius: 2px; }
+    .cm-search-current { background: #f97316 !important; color: #fff !important; border-radius: 2px; }
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(10px); background: #313244; color: #cdd6f4; padding: 9px 18px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none; z-index: 200; }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
@@ -626,6 +628,11 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ── 메모 내 검색 ─────────────────────────────────────────────
+let inNoteMarkers = [];
+function clearSearchMarkers() {
+  inNoteMarkers.forEach(m => m.clear());
+  inNoteMarkers = [];
+}
 let inNoteMatches = [], inNoteCurrent = -1;
 function openInNoteSearch() {
   document.getElementById('in-note-search-bar').classList.add('visible');
@@ -637,27 +644,43 @@ function closeInNoteSearch() {
   document.getElementById('in-note-search-input').value = '';
   inNoteMatches = []; inNoteCurrent = -1;
   document.getElementById('in-note-search-count').textContent = '-';
+  clearSearchMarkers();
 }
 function runInNoteSearch(query) {
+  clearSearchMarkers();
   inNoteMatches = []; inNoteCurrent = -1;
   if (!query) { document.getElementById('in-note-search-count').textContent = '-'; return; }
-  // CodeMirror 에디터에서 내용 읽기
   const content = editor ? editor.getValue() : '';
   if (!content) { document.getElementById('in-note-search-count').textContent = '없음'; return; }
   const lower = content.toLowerCase(), q = query.toLowerCase();
   let idx = 0;
   while ((idx = lower.indexOf(q, idx)) !== -1) { inNoteMatches.push(idx); idx += q.length; }
+  // 모든 결과 노란색 하이라이트
+  inNoteMatches.forEach((pos, i) => {
+    const from = editor.posFromIndex(pos);
+    const to = editor.posFromIndex(pos + query.length);
+    const marker = editor.markText(from, to, { className: 'cm-search-match' });
+    inNoteMarkers.push(marker);
+  });
   if (inNoteMatches.length > 0) { inNoteCurrent = 0; scrollToMatch(0, query.length); }
   updateInNoteCount();
 }
 function scrollToMatch(idx, queryLen) {
   if (!editor || !inNoteMatches.length) return;
+  // 이전 현재 마커를 노란색으로 복원
+  inNoteMarkers.forEach((m, i) => {
+    const pos = m.find();
+    if (!pos) return;
+    m.clear();
+    inNoteMarkers[i] = editor.markText(pos.from, pos.to, {
+      className: i === idx ? 'cm-search-current' : 'cm-search-match'
+    });
+  });
   const pos = inNoteMatches[idx];
   const from = editor.posFromIndex(pos);
   const to = editor.posFromIndex(pos + (queryLen || 0));
-  // 커서만 이동하고 스크롤 (선택 영역 변경 안 함)
   editor.scrollIntoView({from, to}, 150);
-  editor.setCursor(from); // 커서만 이동
+  editor.setCursor(from);
 }
 function updateInNoteCount() { document.getElementById('in-note-search-count').textContent = inNoteMatches.length === 0 ? '없음' : `${inNoteCurrent+1}/${inNoteMatches.length}`; }
 function inNoteNext() {
