@@ -1,4 +1,4 @@
-const CACHE_NAME = 'memo-v9';
+const CACHE_NAME = 'memo-v10';
 
 self.addEventListener('install', event => {
   self.skipWaiting();

@@ -944,7 +944,7 @@ async function startRealtimeSync() {
 
   // ── 메타(카테고리/템플릿/masterHash) 실시간 리스너 ──
   metaUnsubscribe = db.collection('users').doc(uid).onSnapshot(doc => {
-    if (!doc.exists) { firstMetaLoad = false; return; }
+    if (!doc.exists) { firstMetaLoad = false; renderAll(); return; }
     const meta = doc.data();
     isApplyingRemoteChange = true;
     if (Array.isArray(meta.categories) && meta.categories.length) categories = meta.categories;
@@ -952,11 +952,9 @@ async function startRealtimeSync() {
     if (Array.isArray(meta.templates)) templates = meta.templates;
     isApplyingRemoteChange = false;
 
-    if (!firstMetaLoad) {
-      // 다른 기기에서 변경된 것 → 화면 갱신
-      saveLocalDebounced();
-      renderAll();
-    }
+    // 최초 로딩이든 이후 변경이든 항상 화면 갱신 (카테고리가 안 보이는 문제 방지)
+    saveLocalDebounced();
+    renderAll();
     firstMetaLoad = false;
   }, err => console.warn('메타 동기화 경고:', err));
 
@@ -1015,6 +1013,7 @@ async function startRealtimeSync() {
           checkAndUploadLocalNotes();
         }
 
+        renderAll(); // 최초 로딩 시 반드시 화면 갱신 (카테고리 누락 방지)
         setSaveStatus('saved', '✓ Cloud 동기화 완료');
         if (labelEl) labelEl.textContent = currentUser.displayName || currentUser.email;
         if (iconEl) iconEl.textContent = '🔥';
