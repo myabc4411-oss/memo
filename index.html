@@ -816,6 +816,11 @@ function setSaveStatus(state, msg='') {
 }
 
 // ── 로그인 및 동기화 ───────────────────────────────────────────
+// ── 실시간 동기화 상태 ────────────────────────────────────────
+let notesUnsubscribe = null; // 메모 실시간 리스너 해제 함수
+let metaUnsubscribe = null;  // 메타 실시간 리스너 해제 함수
+let isApplyingRemoteChange = false; // 원격 변경 적용 중 플래그 (무한루프 방지)
+
 function onLoginSuccess(user) {
   currentUser = user;
   const screen = document.getElementById('login-screen');
@@ -824,8 +829,8 @@ function onLoginSuccess(user) {
   if (label) label.textContent = user.displayName || user.email;
   const icon = document.getElementById('drive-icon');
   if (icon) icon.textContent = '🔥';
-  showToast('🔥 구글 로그인 성공! 동기화 진행 중...');
-  syncWithFirebase();
+  showToast('🔥 구글 로그인 성공! 실시간 동기화 시작...');
+  startRealtimeSync();
 }
 
 window.doGoogleLogin = function() {
@@ -921,74 +926,136 @@ window.onload = () => {
 };
 
 // ── Firebase 클라우드 동기화 ───────────────────────────────────
-async function syncWithFirebase() {
+async function startRealtimeSync() {
   if (!db || !currentUser) return;
   setSaveStatus('saving', '☁️ Cloud 동기화 중...');
   const labelEl = document.getElementById('drive-label');
   const iconEl = document.getElementById('drive-icon');
   if (labelEl) labelEl.textContent = '☁️ 수신 중...';
 
-  try {
-    const uid = currentUser.uid;
-    const [metaDoc, notesSnap] = await Promise.all([
-      db.collection('users').doc(uid).get(),
-      db.collection('users').doc(uid).collection('notes').get()
-    ]);
+  const uid = currentUser.uid;
 
-    if (metaDoc.exists) {
-      const meta = metaDoc.data();
-      if (Array.isArray(meta.categories) && meta.categories.length) categories = meta.categories;
-      if (meta.masterHash) masterHash = meta.masterHash;
-      if (Array.isArray(meta.templates)) templates = meta.templates;
+  // 기존 리스너 있으면 해제 (재로그인 대비)
+  if (notesUnsubscribe) notesUnsubscribe();
+  if (metaUnsubscribe) metaUnsubscribe();
+
+  let firstNotesLoad = true;
+  let firstMetaLoad = true;
+
+  // ── 메타(카테고리/템플릿/masterHash) 실시간 리스너 ──
+  metaUnsubscribe = db.collection('users').doc(uid).onSnapshot(doc => {
+    if (!doc.exists) { firstMetaLoad = false; return; }
+    const meta = doc.data();
+    isApplyingRemoteChange = true;
+    if (Array.isArray(meta.categories) && meta.categories.length) categories = meta.categories;
+    if (meta.masterHash) masterHash = meta.masterHash;
+    if (Array.isArray(meta.templates)) templates = meta.templates;
+    isApplyingRemoteChange = false;
+
+    if (!firstMetaLoad) {
+      // 다른 기기에서 변경된 것 → 화면 갱신
+      saveLocalDebounced();
+      renderAll();
     }
+    firstMetaLoad = false;
+  }, err => console.warn('메타 동기화 경고:', err));
 
-    if (!notesSnap.empty) {
-      const remoteNotes = notesSnap.docs.map(d => d.data());
-      const noteMap = new Map();
-      notes.forEach(n => noteMap.set(n.id, n));
-      remoteNotes.forEach(rn => {
-        const local = noteMap.get(rn.id);
-        if (!local || rn.updated >= local.updated) {
-          noteMap.set(rn.id, rn);
+  // ── 메모 목록 실시간 리스너 (핵심!) ──
+  notesUnsubscribe = db.collection('users').doc(uid).collection('notes')
+    .onSnapshot(snap => {
+      if (isApplyingRemoteChange) return;
+
+      let hasRemoteChange = false;
+      isApplyingRemoteChange = true;
+
+      snap.docChanges().forEach(change => {
+        const remoteNote = change.doc.data();
+        if (change.type === 'removed') {
+          const before = notes.length;
+          notes = notes.filter(n => n.id !== remoteNote.id);
+          if (notes.length !== before) hasRemoteChange = true;
+          if (currentNote && currentNote.id === remoteNote.id) {
+            currentNote = null;
+            showEditorState('none');
+          }
+          return;
+        }
+        // added 또는 modified
+        const idx = notes.findIndex(n => n.id === remoteNote.id);
+        if (idx === -1) {
+          notes.unshift(remoteNote);
+          hasRemoteChange = true;
+        } else {
+          const local = notes[idx];
+          // 로컬이 더 최신이면(현재 편집 중일 수 있음) 덮어쓰지 않음
+          if (remoteNote.updated > local.updated) {
+            notes[idx] = remoteNote;
+            hasRemoteChange = true;
+            // 지금 보고 있는 메모가 다른 기기에서 바뀌었으면 에디터도 갱신
+            if (currentNote && currentNote.id === remoteNote.id && !isDirty) {
+              currentNote = remoteNote;
+              document.getElementById('note-title').value = remoteNote.title;
+              setCMText(remoteNote.body);
+              document.getElementById('note-date').textContent = '수정: ' + fmtDate(remoteNote.updated);
+              renderTags(remoteNote.tags || []);
+            }
+          }
         }
       });
-      notes = Array.from(noteMap.values());
-      notes.sort((a, b) => b.updated - a.updated);
 
-      saveLocalDebounced();
-      setSaveStatus('saved', '✓ Cloud 동기화 완료');
-      if (labelEl) labelEl.textContent = currentUser.displayName || currentUser.email;
-      if (iconEl) iconEl.textContent = '🔥';
-      showToast(`🔥 동기화 완료! 총 ${notes.length}개 메모 불러옴`);
-      setTimeout(() => setSaveStatus('idle', ''), 3000);
-    } else if (notes.length > 0) {
-      showToast('☁️ 기존 로컬 메모를 클라우드에 업로드 중...');
-      await saveMetaToFirebase();
-      for (const note of notes) await saveNoteToFirebase(note);
-      setSaveStatus('saved', '✓ 업로드 완료');
-      if (labelEl) labelEl.textContent = currentUser.displayName || currentUser.email;
-      if (iconEl) iconEl.textContent = '🔥';
-      setTimeout(() => setSaveStatus('idle', ''), 3000);
-    } else {
+      isApplyingRemoteChange = false;
+
+      if (firstNotesLoad) {
+        // 최초 로딩: 정렬 후 렌더
+        notes.sort((a, b) => b.updated - a.updated);
+        firstNotesLoad = false;
+
+        if (notes.length === 0) {
+          // Firebase에 메모가 없으면 로컬 메모를 업로드
+          checkAndUploadLocalNotes();
+        }
+
+        setSaveStatus('saved', '✓ Cloud 동기화 완료');
+        if (labelEl) labelEl.textContent = currentUser.displayName || currentUser.email;
+        if (iconEl) iconEl.textContent = '🔥';
+        showToast(`🔥 실시간 동기화 시작! 총 ${notes.length}개 메모`);
+        setTimeout(() => setSaveStatus('idle', ''), 3000);
+      } else if (hasRemoteChange) {
+        // 다른 기기에서 변경됨 → 로컬 캐시 갱신 + 화면 갱신
+        notes.sort((a, b) => b.updated - a.updated);
+        saveLocalDebounced();
+        renderAll();
+        showToast('🔄 다른 기기에서 변경사항이 동기화됐어요');
+      }
+    }, err => {
+      console.warn('메모 실시간 동기화 경고:', err);
       setSaveStatus('idle', '');
-      if (labelEl) labelEl.textContent = currentUser.displayName || currentUser.email;
-    }
-  } catch(e) {
-    console.warn('Firebase 동기화 경고:', e);
-    setSaveStatus('idle', '');
-    if (labelEl && currentUser) labelEl.textContent = currentUser.displayName || currentUser.email;
-  }
+      if (labelEl && currentUser) labelEl.textContent = currentUser.displayName || currentUser.email;
+    });
 
   if (!categories.length) {
     categories = [
-      { id: uid(), name: '업무', color: '#89b4fa' },
-      { id: uid(), name: '개인', color: '#cba6f7' },
-      { id: uid(), name: '아이디어', color: '#a6e3a1' },
+      { id: uid_gen(), name: '업무', color: '#89b4fa' },
+      { id: uid_gen(), name: '개인', color: '#cba6f7' },
+      { id: uid_gen(), name: '아이디어', color: '#a6e3a1' },
     ];
   }
   driveLoadDone = true;
-  renderAll();
 }
+
+// 로컬에만 있고 Firebase엔 없는 초기 메모를 업로드 (최초 1회성)
+async function checkAndUploadLocalNotes() {
+  if (notes.length > 0) {
+    showToast('☁️ 기존 로컬 메모를 클라우드에 업로드 중...');
+    await saveMetaToFirebase();
+    for (const note of notes) await saveNoteToFirebase(note);
+  }
+}
+
+function uid_gen() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+// 구버전 호환용 별칭
+async function syncWithFirebase() { await startRealtimeSync(); }
 
 function loadLocalAndRender() {
   try {
