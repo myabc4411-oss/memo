@@ -536,17 +536,63 @@ function updateScrollBtns() {
 addEv('btn-scroll-top', 'click', () => { if (editor) editor.scrollTo(0, 0); });
 addEv('btn-scroll-bot', 'click', () => { if (editor) { const info = editor.getScrollInfo(); editor.scrollTo(0, info.height); } });
 
-function showPanel(panel) {
+// ── 모바일 뒤로가기 버튼 최적화 ────────────────────────────────
+// history.pushState로 화면 단계를 기록해서 폰 뒤로가기 버튼과 연동
+let currentPanelState = 'sidebar'; // 'sidebar' | 'list' | 'editor'
+let isPopping = false; // popstate 처리 중 재귀 방지
+
+function showPanel(panel, fromPopState = false) {
   if (!isMobile()) return;
+  // 에디터에서 벗어날 때 저장 안 된 변경사항 저장
+  if (currentPanelState === 'editor' && panel !== 'editor' && currentNote && isDirty) {
+    saveCurrentNote(true);
+  }
   document.body.classList.remove('show-list', 'show-editor');
   if (panel === 'list') document.body.classList.add('show-list');
   if (panel === 'editor') document.body.classList.add('show-editor');
+  currentPanelState = panel;
   setTimeout(updateScrollBtns, 50);
+
+  // popstate(뒤로가기)로 인한 호출이 아니면 히스토리에 새 단계 추가
+  if (!fromPopState && !isPopping) {
+    history.pushState({ panel: panel }, '');
+  }
 }
 
+// 앱 시작 시 초기 히스토리 상태 등록 (sidebar가 기본 홈)
+if (isMobile()) {
+  history.replaceState({ panel: 'sidebar' }, '');
+}
+
+// 폰 뒤로가기 버튼 / 브라우저 뒤로가기 감지
+window.addEventListener('popstate', (e) => {
+  if (!isMobile()) return;
+  isPopping = true;
+  const targetPanel = (e.state && e.state.panel) || 'sidebar';
+
+  // 검색바나 모달이 열려있으면 그것부터 닫기 (뒤로가기 한 단계로 처리)
+  const searchBar = document.getElementById('in-note-search-bar');
+  if (searchBar && searchBar.classList.contains('visible')) {
+    closeInNoteSearch();
+    history.pushState({ panel: currentPanelState }, ''); // 현재 패널 유지하며 스택 보정
+    isPopping = false;
+    return;
+  }
+  const openModal = document.querySelector('.modal-overlay.open');
+  if (openModal) {
+    openModal.classList.remove('open');
+    history.pushState({ panel: currentPanelState }, '');
+    isPopping = false;
+    return;
+  }
+
+  showPanel(targetPanel, true);
+  isPopping = false;
+});
+
 addEv('btn-sidebar-to-list', 'click', () => showPanel('list'));
-addEv('btn-list-back', 'click', () => showPanel('sidebar'));
-addEv('btn-editor-back', 'click', () => showPanel('list'));
+addEv('btn-list-back', 'click', () => history.back());
+addEv('btn-editor-back', 'click', () => history.back());
 document.querySelectorAll('.nav-item').forEach(item => { item.addEventListener('click', () => { if (isMobile()) showPanel('list'); }); });
 addEv('cat-list', 'click', () => { if (isMobile()) showPanel('list'); });
 
