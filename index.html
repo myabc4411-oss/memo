@@ -943,30 +943,37 @@ async function startRealtimeSync() {
   let firstMetaLoad = true;
 
   // ── 메타(카테고리/템플릿/masterHash) 실시간 리스너 ──
-  metaUnsubscribe = db.collection('users').doc(uid).onSnapshot(doc => {
-    if (!doc.exists) { firstMetaLoad = false; renderAll(); return; }
-    const meta = doc.data();
-    isApplyingRemoteChange = true;
-    if (Array.isArray(meta.categories) && meta.categories.length) categories = meta.categories;
-    if (meta.masterHash) masterHash = meta.masterHash;
-    if (Array.isArray(meta.templates)) templates = meta.templates;
-    isApplyingRemoteChange = false;
+  metaUnsubscribe = db.collection('users').doc(uid)
+    .onSnapshot({ includeMetadataChanges: true }, doc => {
+      // 내가 방금 쓴 로컬 변경이면 무시 (echo 방지)
+      if (doc.metadata.hasPendingWrites) { firstMetaLoad = false; return; }
+      if (!doc.exists) { firstMetaLoad = false; renderAll(); return; }
+      const meta = doc.data();
+      isApplyingRemoteChange = true;
+      if (Array.isArray(meta.categories) && meta.categories.length) categories = meta.categories;
+      if (meta.masterHash) masterHash = meta.masterHash;
+      if (Array.isArray(meta.templates)) templates = meta.templates;
+      isApplyingRemoteChange = false;
 
-    // 최초 로딩이든 이후 변경이든 항상 화면 갱신 (카테고리가 안 보이는 문제 방지)
-    saveLocalDebounced();
-    renderAll();
-    firstMetaLoad = false;
-  }, err => console.warn('메타 동기화 경고:', err));
+      saveLocalDebounced();
+      renderAll();
+      firstMetaLoad = false;
+    }, err => console.warn('메타 동기화 경고:', err));
 
   // ── 메모 목록 실시간 리스너 (핵심!) ──
+  // includeMetadataChanges: true 로 hasPendingWrites 확인 가능 (내가 방금 쓴 건지 구분)
   notesUnsubscribe = db.collection('users').doc(uid).collection('notes')
-    .onSnapshot(snap => {
+    .onSnapshot({ includeMetadataChanges: true }, snap => {
       if (isApplyingRemoteChange) return;
 
       let hasRemoteChange = false;
       isApplyingRemoteChange = true;
 
       snap.docChanges().forEach(change => {
+        // ── 핵심 수정: 이게 "내 기기가 방금 쓴 로컬 변경"이면 완전히 무시 ──
+        // hasPendingWrites가 true면 서버 확정 전 로컬 캐시 반영분 → 내가 쓴 것
+        if (change.doc.metadata.hasPendingWrites) return;
+
         const remoteNote = change.doc.data();
         if (change.type === 'removed') {
           const before = notes.length;
@@ -985,7 +992,11 @@ async function startRealtimeSync() {
           hasRemoteChange = true;
         } else {
           const local = notes[idx];
-          // 로컬이 더 최신이면(현재 편집 중일 수 있음) 덮어쓰지 않음
+          // 완전히 동일한 내용이면 아무것도 안 함 (echo 방지 2차 방어선)
+          if (local.updated === remoteNote.updated && local.body === remoteNote.body && local.title === remoteNote.title) {
+            return;
+          }
+          // 원격이 더 최신일 때만 반영
           if (remoteNote.updated > local.updated) {
             notes[idx] = remoteNote;
             hasRemoteChange = true;
@@ -1020,10 +1031,11 @@ async function startRealtimeSync() {
         showToast(`🔥 실시간 동기화 시작! 총 ${notes.length}개 메모`);
         setTimeout(() => setSaveStatus('idle', ''), 3000);
       } else if (hasRemoteChange) {
-        // 다른 기기에서 변경됨 → 로컬 캐시 갱신 + 화면 갱신
-        notes.sort((a, b) => b.updated - a.updated);
+        // 진짜로 다른 기기에서 변경됨 → 로컬 캐시 갱신 + 화면 갱신
+        // 목록 재정렬은 하지 않음 (내가 지금 보던 위치가 계속 바뀌는 문제 방지)
         saveLocalDebounced();
-        renderAll();
+        renderNoteList();
+        updateCounts();
         showToast('🔄 다른 기기에서 변경사항이 동기화됐어요');
       }
     }, err => {
