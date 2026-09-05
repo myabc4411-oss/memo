@@ -118,6 +118,18 @@
     .btn-icon-tool.active-lock { background: #fef3cd; border-color: #f9e2af; }
     .btn-icon-tool.active-hide { background: #f0e6ff; border-color: #cba6f7; }
 
+    /* 에디터 배경색 선택 */
+    .bg-color-wrap { position: relative; }
+    .bg-color-popover {
+      display: none; position: absolute; top: 36px; left: 0; z-index: 60;
+      background: #fff; border: 1px solid var(--border); border-radius: 8px;
+      padding: 8px; box-shadow: var(--shadow);
+      grid-template-columns: repeat(4, 26px); gap: 6px;
+    }
+    .bg-color-popover.open { display: grid; }
+    .bg-color-swatch { width: 26px; height: 26px; border-radius: 6px; border: 2px solid #ddd; cursor: pointer; padding: 0; }
+    .bg-color-swatch.selected, .bg-color-swatch:hover { border-color: #333; }
+
     /* CodeMirror 5 초고속 가상화 에디터 */
     #cm-editor-wrap { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-height: 0; position: relative; }
     .CodeMirror {
@@ -395,6 +407,10 @@
         <button class="btn-icon-tool" id="btn-template" title="템플릿">📋</button>
         <button class="btn-icon-tool" id="btn-save-template" title="현재 메모를 템플릿으로 저장">💾</button>
         <button class="btn-icon-tool" id="btn-in-note-search" title="메모 내 검색">🔎</button>
+        <div class="bg-color-wrap">
+          <button class="btn-icon-tool" id="btn-bg-color" title="배경색">🎨</button>
+          <div class="bg-color-popover" id="bg-color-popover"></div>
+        </div>
         <button class="btn-icon-tool" id="btn-lock-note" title="비밀번호 잠금">🔓</button>
         <button class="btn-icon-tool" id="btn-hide-note" title="메모 숨기기">👁</button>
         <div class="tag-input-wrap">
@@ -626,6 +642,59 @@ function initCodeMirror() {
 function getCMText() {
   return editor ? editor.getValue() : '';
 }
+
+// ── 에디터 배경색 ──────────────────────────────────────────────
+const BG_COLORS = [
+  { name: '기본',  value: null },
+  { name: '초록',  value: '#d7f5df' },
+  { name: '노랑',  value: '#fff6d9' },
+  { name: '파랑',  value: '#e3f0ff' },
+  { name: '분홍',  value: '#ffe8ee' },
+  { name: '보라',  value: '#f1e8fc' },
+  { name: '회색',  value: '#eeeeee' }
+];
+
+function applyEditorBg(color) {
+  const cm = document.querySelector('#cm-editor-wrap .CodeMirror');
+  if (cm) cm.style.background = color || '';
+}
+
+function buildBgColorPopover() {
+  const pop = document.getElementById('bg-color-popover');
+  if (!pop) return;
+  const current = currentNote ? (currentNote.bgColor || null) : null;
+  pop.innerHTML = BG_COLORS.map(c => {
+    const sel = current === c.value;
+    return `<button type="button" class="bg-color-swatch${sel ? ' selected' : ''}" data-color="${c.value || ''}" style="background:${c.value || '#ffffff'};" title="${c.name}"></button>`;
+  }).join('');
+}
+
+addEv('btn-bg-color', 'click', (e) => {
+  e.stopPropagation();
+  if (!currentNote) return;
+  buildBgColorPopover();
+  document.getElementById('bg-color-popover').classList.toggle('open');
+});
+
+document.addEventListener('click', (e) => {
+  const pop = document.getElementById('bg-color-popover');
+  if (!pop || !pop.classList.contains('open')) return;
+  if (pop.contains(e.target) || e.target.id === 'btn-bg-color') return;
+  pop.classList.remove('open');
+});
+
+document.addEventListener('click', (e) => {
+  const swatch = e.target.closest('.bg-color-swatch');
+  if (!swatch || !currentNote) return;
+  const val = swatch.dataset.color || null;
+  currentNote.bgColor = val;
+  applyEditorBg(val);
+  isDirty = true;
+  setSaveStatus('idle', '✏️ 편집 중...');
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(() => { saveCurrentNote(true); }, 600);
+  document.getElementById('bg-color-popover').classList.remove('open');
+});
 
 function setCMText(text) {
   if (!editor) return;
@@ -1385,6 +1454,7 @@ async function openNote(id){
   document.getElementById('note-cat').value=note.cat||'';
   document.getElementById('note-starred').checked=!!note.starred;
   document.getElementById('note-date').textContent='수정: '+fmtDate(note.updated);
+  applyEditorBg(note.bgColor || null);
   setSaveStatus('idle',''); renderTags(note.tags||[]); updateCatSelect(); updateLockHideButtons();
   setTimeout(() => {
     const el = document.getElementById('note-body');
@@ -1453,10 +1523,11 @@ async function saveCurrentNote(silent = false){
 
 function newNote(){
   const note={id:uid(),title:'',body:'',cat:currentFilter==='cat'?currentCat:(categories[0]?.id||''),
-    tags:[],starred:false,locked:false,lockHash:null,hidden:false,created:Date.now(),updated:Date.now()};
+    tags:[],starred:false,locked:false,lockHash:null,hidden:false,bgColor:null,created:Date.now(),updated:Date.now()};
   currentNote=note;notes.unshift(note);
   showEditorState('editor');
   document.getElementById('note-title').value=''; setCMText('');
+  applyEditorBg(null);
   document.getElementById('note-starred').checked=false;
   document.getElementById('note-date').textContent='방금 생성'; setSaveStatus('idle','');
   renderTags([]); updateCatSelect(); document.getElementById('note-cat').value=note.cat; updateLockHideButtons();
