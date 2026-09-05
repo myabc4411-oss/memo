@@ -123,7 +123,7 @@
     .bg-color-popover {
       display: none; position: absolute; top: 36px; left: 0; z-index: 60;
       background: #fff; border: 1px solid var(--border); border-radius: 8px;
-      padding: 8px; box-shadow: var(--shadow);
+      padding: 8px; box-shadow: var(--shadow); min-width: 150px;
       grid-template-columns: repeat(4, 26px); gap: 6px;
     }
     .bg-color-popover.open { display: grid; }
@@ -663,14 +663,49 @@ function applyEditorBg(color) {
   else wrap.style.removeProperty('--editor-bg');
 }
 
+let applyBgToAllNotes = false;
+
 function buildBgColorPopover() {
   const pop = document.getElementById('bg-color-popover');
   if (!pop) return;
   const current = currentNote ? (currentNote.bgColor || null) : null;
-  pop.innerHTML = BG_COLORS.map(c => {
+  const swatches = BG_COLORS.map(c => {
     const sel = current === c.value;
     return `<button type="button" class="bg-color-swatch${sel ? ' selected' : ''}" data-color="${c.value || ''}" style="background:${c.value || '#ffffff'};" title="${c.name}"></button>`;
   }).join('');
+  pop.innerHTML = `
+    <label style="grid-column:1/-1;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-bottom:4px;cursor:pointer;line-height:1.3;">
+      <input type="checkbox" id="bg-color-apply-all" style="accent-color:var(--accent);flex-shrink:0;">
+      전체 메모에 일괄 적용
+    </label>
+    ${swatches}`;
+  const chk = document.getElementById('bg-color-apply-all');
+  if (chk) {
+    chk.checked = applyBgToAllNotes;
+    chk.addEventListener('change', () => { applyBgToAllNotes = chk.checked; });
+  }
+}
+
+async function applyBgColorToAllNotes(color) {
+  if (!notes.length) { showToast('메모가 없습니다'); return; }
+  const colorName = (BG_COLORS.find(c => c.value === color) || {}).name || '기본';
+  if (!confirm(`전체 메모 ${notes.length}개의 배경색을 "${colorName}"(으)로 일괄 변경할까요?`)) return;
+
+  const now = Date.now();
+  notes.forEach(n => { n.bgColor = color; n.updated = now; });
+  if (currentNote) applyEditorBg(currentNote.bgColor);
+
+  try { localStorage.setItem('memo_app_data', JSON.stringify({ notes, categories, masterHash, templates })); } catch(e) {}
+
+  if (db && currentUser) {
+    setSaveStatus('saving', `💾 전체 ${notes.length}개 저장 중...`);
+    for (const n of notes) { await saveNoteToFirebase(n); }
+    setSaveStatus('saved', '✓ 저장 완료');
+    setTimeout(() => setSaveStatus('idle', ''), 2500);
+  }
+  renderAll();
+  updateActiveCardUI();
+  showToast(`🎨 전체 ${notes.length}개 메모의 배경색을 변경했습니다`);
 }
 
 addEv('btn-bg-color', 'click', (e) => {
@@ -691,13 +726,19 @@ document.addEventListener('click', (e) => {
   const swatch = e.target.closest('.bg-color-swatch');
   if (!swatch || !currentNote) return;
   const val = swatch.dataset.color || null;
+  document.getElementById('bg-color-popover').classList.remove('open');
+
+  if (applyBgToAllNotes) {
+    applyBgColorToAllNotes(val);
+    return;
+  }
+
   currentNote.bgColor = val;
   applyEditorBg(val);
   isDirty = true;
   setSaveStatus('idle', '✏️ 편집 중...');
   clearTimeout(autoSaveTimer);
   autoSaveTimer = setTimeout(() => { saveCurrentNote(true); }, 600);
-  document.getElementById('bg-color-popover').classList.remove('open');
 });
 
 function setCMText(text) {
