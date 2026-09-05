@@ -655,8 +655,12 @@ const BG_COLORS = [
 ];
 
 function applyEditorBg(color) {
-  const cm = document.querySelector('#cm-editor-wrap .CodeMirror');
-  if (cm) cm.style.background = color || '';
+  // .CodeMirror 배경은 CSS에서 var(--editor-bg) !important 로 지정되어 있으므로
+  // 인라인 style로는 덮어쓸 수 없고, 해당 CSS 변수 자체를 wrap에서 재정의해야 적용됨
+  const wrap = document.getElementById('cm-editor-wrap');
+  if (!wrap) return;
+  if (color) wrap.style.setProperty('--editor-bg', color);
+  else wrap.style.removeProperty('--editor-bg');
 }
 
 function buildBgColorPopover() {
