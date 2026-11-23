@@ -195,6 +195,14 @@
     .btn-danger-sm { background: #fde8ec; color: var(--danger); border: none; border-radius: 7px; padding: 7px 14px; font-size: 13px; cursor: pointer; margin-right: auto; }
     .btn-confirm { background: var(--accent); color: #fff; border: none; border-radius: 7px; padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer; }
 
+    /* 단축키 설정 */
+    .shortcut-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 2px; }
+    .shortcut-row-label { font-size: 13px; color: var(--text); }
+    .shortcut-row-combo { font-size: 12px; color: var(--muted); background: #f0f0eb; border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; min-width: 110px; text-align: center; font-family: monospace; }
+    .shortcut-row-combo.capturing { background: #fff3cd; border-color: #f9e2af; color: #7a5b00; }
+    .shortcut-row-btn { background: #f0f0eb; border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px; font-size: 12px; cursor: pointer; }
+    .shortcut-row-btn:hover { background: var(--border); }
+
     /* 템플릿 목록 */
     .template-item {
       display: flex; align-items: center; justify-content: space-between;
@@ -364,6 +372,10 @@
       <span id="import-label">데이터 복원 (JSON)</span>
     </div>
     <input type="file" id="file-import-json" accept=".json" style="display:none;" />
+    <div class="btn-drive" id="btn-shortcut-settings" style="cursor:pointer; margin-top:8px; background:#45475a;" title="단축키를 원하는 조합으로 바꿀 수 있어요">
+      <span>⌨️</span>
+      <span>단축키 설정</span>
+    </div>
   </div>
 </aside>
 
@@ -404,7 +416,7 @@
           <input type="checkbox" id="note-starred" style="accent-color:var(--accent);"> ⭐
         </label>
         <button class="btn-icon-tool" id="btn-checklist" title="체크리스트 항목 추가">☑️</button>
-        <button class="btn-icon-tool" id="btn-template" title="템플릿">📋</button>
+        <button class="btn-icon-tool" id="btn-template" title="템플릿 (Ctrl+Alt+T)">📋</button>
         <button class="btn-icon-tool" id="btn-save-template" title="현재 메모를 템플릿으로 저장">💾</button>
         <button class="btn-icon-tool" id="btn-in-note-search" title="메모 내 검색">🔎</button>
         <div class="bg-color-wrap">
@@ -438,8 +450,8 @@
 
 <!-- 맨위/맨아래 버튼 -->
 <div id="scroll-btns">
-  <button class="scroll-jump-btn" id="btn-scroll-top">↑</button>
-  <button class="scroll-jump-btn" id="btn-scroll-bot">↓</button>
+  <button class="scroll-jump-btn" id="btn-scroll-top" title="맨 위로 (Ctrl+Alt+↑)">↑</button>
+  <button class="scroll-jump-btn" id="btn-scroll-bot" title="맨 아래로 (Ctrl+Alt+↓)">↓</button>
 </div>
 
 <!-- 템플릿 모달 -->
@@ -504,6 +516,19 @@
     <div class="modal-actions">
       <button class="btn-cancel" id="hidden-pwd-cancel">취소</button>
       <button class="btn-confirm" id="hidden-pwd-confirm-btn">확인</button>
+    </div>
+  </div>
+</div>
+
+<!-- 단축키 설정 모달 -->
+<div class="modal-overlay" id="shortcut-modal">
+  <div class="modal" style="width:380px;max-width:calc(100% - 32px);">
+    <h3>⌨️ 단축키 설정</h3>
+    <p class="modal-sub">원하는 항목의 "변경"을 누르고, 쓰고 싶은 키 조합을 누르세요</p>
+    <div id="shortcut-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
+    <div class="modal-actions">
+      <button class="btn-danger-sm" id="shortcut-reset">기본값으로</button>
+      <button class="btn-cancel" id="shortcut-close">닫기</button>
     </div>
   </div>
 </div>
@@ -998,6 +1023,7 @@ window.doGoogleLogin = function() {
 
 window.onload = () => {
   initCodeMirror();
+  updateShortcutTooltips();
 
   // 로그인 버튼 이벤트 여기서 연결 (doGoogleLogin 정의 후)
   const loginBtn = document.getElementById('btn-google-login');
@@ -1583,8 +1609,139 @@ function newNote(){
 document.getElementById('btn-new-note').addEventListener('click',newNote);
 document.getElementById('btn-start').addEventListener('click',newNote);
 document.getElementById('btn-save').addEventListener('click', () => saveCurrentNote(false));
-document.addEventListener('keydown',e=>{
-  if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();clearTimeout(saveDebounceTimer);saveDebounceTimer=setTimeout(()=>saveCurrentNote(),300);}
+// ── 사용자 지정 단축키 ────────────────────────────────────────
+const SHORTCUT_ACTIONS = [
+  { id: 'save',     label: '저장',           editorOnly: false, default: { ctrl: true,  alt: false, shift: false, key: 's' },
+    run: () => { clearTimeout(saveDebounceTimer); saveDebounceTimer = setTimeout(() => saveCurrentNote(), 300); } },
+  { id: 'search',   label: '메모 내 검색 열기', editorOnly: true,  default: { ctrl: true,  alt: true,  shift: false, key: 'f' },
+    run: () => openInNoteSearch() },
+  { id: 'top',      label: '맨 위로 스크롤',   editorOnly: true,  default: { ctrl: true,  alt: true,  shift: false, key: 'arrowup' },
+    run: () => document.getElementById('btn-scroll-top').click() },
+  { id: 'bottom',   label: '맨 아래로 스크롤', editorOnly: true,  default: { ctrl: true,  alt: true,  shift: false, key: 'arrowdown' },
+    run: () => document.getElementById('btn-scroll-bot').click() },
+  { id: 'template', label: '템플릿 불러오기',  editorOnly: true,  default: { ctrl: true,  alt: true,  shift: false, key: 't' },
+    run: () => document.getElementById('btn-template').click() },
+];
+
+let customShortcuts = {};
+try {
+  const rawSc = localStorage.getItem('memo_app_shortcuts');
+  if (rawSc) customShortcuts = JSON.parse(rawSc) || {};
+} catch(e) { customShortcuts = {}; }
+
+function getShortcutCombo(id) {
+  if (customShortcuts[id]) return customShortcuts[id];
+  const def = SHORTCUT_ACTIONS.find(a => a.id === id);
+  return def ? def.default : null;
+}
+function saveShortcuts() {
+  try { localStorage.setItem('memo_app_shortcuts', JSON.stringify(customShortcuts)); } catch(e) {}
+}
+function updateShortcutTooltips() {
+  const map = {
+    'btn-template': ['template', '템플릿'],
+    'btn-scroll-top': ['top', '맨 위로'],
+    'btn-scroll-bot': ['bottom', '맨 아래로'],
+    'btn-in-note-search': ['search', '메모 내 검색'],
+  };
+  Object.keys(map).forEach(elId => {
+    const [actionId, baseLabel] = map[elId];
+    const el = document.getElementById(elId);
+    if (el) el.title = `${baseLabel} (${comboLabel(getShortcutCombo(actionId))})`;
+  });
+}
+function comboLabel(combo) {
+  if (!combo) return '-';
+  const parts = [];
+  if (combo.ctrl) parts.push('Ctrl');
+  if (combo.alt) parts.push('Alt');
+  if (combo.shift) parts.push('Shift');
+  const ARROW = { arrowup: '↑', arrowdown: '↓', arrowleft: '←', arrowright: '→' };
+  let k = ARROW[combo.key] || (combo.key.length === 1 ? combo.key.toUpperCase() : combo.key);
+  parts.push(k);
+  return parts.join('+');
+}
+function comboMatchesEvent(e, combo) {
+  if (!combo) return false;
+  // Mac에서 Cmd 키로 저장하는 습관도 지원 (ctrl 조합과 동등하게 취급)
+  const ctrlPressed = e.ctrlKey || e.metaKey;
+  return !!ctrlPressed === !!combo.ctrl && !!e.altKey === !!combo.alt && !!e.shiftKey === !!combo.shift && e.key.toLowerCase() === combo.key;
+}
+function comboEquals(a, b) {
+  return !!a && !!b && !!a.ctrl === !!b.ctrl && !!a.alt === !!b.alt && !!a.shift === !!b.shift && a.key === b.key;
+}
+
+let capturingActionId = null;
+function renderShortcutList() {
+  const wrap = document.getElementById('shortcut-list');
+  if (!wrap) return;
+  wrap.innerHTML = SHORTCUT_ACTIONS.map(a => {
+    const combo = getShortcutCombo(a.id);
+    const capturing = capturingActionId === a.id;
+    return `<div class="shortcut-row">
+      <span class="shortcut-row-label">${escHtml(a.label)}</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="shortcut-row-combo${capturing ? ' capturing' : ''}">${capturing ? '키를 누르세요...' : escHtml(comboLabel(combo))}</span>
+        <button type="button" class="shortcut-row-btn" data-action="${a.id}">변경</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+addEv('shortcut-list', 'click', e => {
+  const btn = e.target.closest('.shortcut-row-btn');
+  if (!btn) return;
+  capturingActionId = btn.dataset.action;
+  renderShortcutList();
+});
+// 캡처 단계에서 가로채서, 캡처 중에는 다른 단축키/입력이 동작하지 않도록 함
+document.addEventListener('keydown', e => {
+  if (!capturingActionId) return;
+  if (['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) return;
+  e.preventDefault(); e.stopPropagation();
+  if (e.key === 'Escape') { capturingActionId = null; renderShortcutList(); return; }
+  const combo = { ctrl: e.ctrlKey || e.metaKey, alt: e.altKey, shift: e.shiftKey, key: e.key.toLowerCase() };
+  const action = SHORTCUT_ACTIONS.find(a => a.id === capturingActionId);
+  const dup = SHORTCUT_ACTIONS.find(a => a.id !== capturingActionId && comboEquals(getShortcutCombo(a.id), combo));
+  customShortcuts[capturingActionId] = combo;
+  saveShortcuts();
+  updateShortcutTooltips();
+  capturingActionId = null;
+  renderShortcutList();
+  if (dup) showToast(`⚠️ "${dup.label}" 단축키와 겹쳐요. 필요하면 다시 바꿔주세요.`);
+  else showToast(`✅ "${action.label}" 단축키가 ${comboLabel(combo)}(으)로 변경되었습니다`);
+}, true);
+
+addEv('btn-shortcut-settings', 'click', () => {
+  capturingActionId = null;
+  renderShortcutList();
+  document.getElementById('shortcut-modal').classList.add('open');
+});
+addEv('shortcut-close', 'click', () => { capturingActionId = null; document.getElementById('shortcut-modal').classList.remove('open'); });
+addEv('shortcut-modal', 'click', e => { if (e.target === e.currentTarget) { capturingActionId = null; e.currentTarget.classList.remove('open'); } });
+addEv('shortcut-reset', 'click', () => {
+  if (!confirm('모든 단축키를 기본값으로 되돌릴까요?')) return;
+  customShortcuts = {};
+  saveShortcuts();
+  updateShortcutTooltips();
+  renderShortcutList();
+  showToast('⌨️ 단축키를 기본값으로 되돌렸습니다');
+});
+
+// ── 단축키 실행 ───────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (capturingActionId) return; // 캡처 중에는 위쪽 캡처 리스너가 이미 처리함
+  for (const action of SHORTCUT_ACTIONS) {
+    const combo = getShortcutCombo(action.id);
+    if (!comboMatchesEvent(e, combo)) continue;
+    if (action.editorOnly) {
+      const area = document.getElementById('editor-area');
+      if (!area || area.style.display !== 'flex') continue;
+    }
+    if (!currentNote && action.id !== 'save') continue;
+    e.preventDefault();
+    action.run();
+    break;
+  }
 });
 
 const noteTitleEl = document.getElementById('note-title');
